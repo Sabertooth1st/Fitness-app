@@ -1,5 +1,4 @@
 import * as Crypto from 'expo-crypto';
-import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 import type { CoachInput } from '../../domain/coach';
@@ -11,7 +10,7 @@ import { DEV_CATALOGUE } from '../../content/exercises.dev';
 import { TEMPLATES } from '../../content/templates.dev';
 import { env } from '../../config/env';
 import { DISABLED_EXERCISE_IDS } from '../../config/featureSwitches';
-import type { Db } from '../../data/local/db';
+import { useDb } from '../../data/local/DbProvider';
 import type { Exclusions, FamiliarityMap, GymProfile, Profile, WorkoutSession } from '../../data/local/models';
 import { LocalStore } from '../../data/local/store';
 import { LocaleContext } from '../../i18n';
@@ -48,9 +47,9 @@ export function deviceTimezone(): string {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const db = useSQLiteContext();
+  const db = useDb();
   const store = useMemo(
-    () => new LocalStore({ db: db as unknown as Db, newId: () => Crypto.randomUUID(), now: () => new Date() }),
+    () => new LocalStore({ db, newId: () => Crypto.randomUUID(), now: () => new Date() }),
     [db],
   );
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);

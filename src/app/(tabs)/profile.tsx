@@ -4,18 +4,18 @@ import { confirmAction } from '../../components/confirm';
 import { Body, Button, Card, Choice, Heading, Row, Screen, Title } from '../../components/ui';
 import { addDays } from '../../domain/dates';
 import { cloudConfigured, env } from '../../config/env';
-import { wipeLocalData, type Db } from '../../data/local/db';
+import { wipeLocalData } from '../../data/local/db';
+import { useDb } from '../../data/local/DbProvider';
 import type { Profile } from '../../data/local/models';
 import { useApp } from '../../features/app/AppState';
 import { exportJson } from '../../features/settings/dataExport';
 import { cancelReminders, scheduleReminders } from '../../features/settings/reminders';
 import { useT } from '../../i18n';
 import { spacing } from '../../theme/tokens';
-import { useSQLiteContext } from 'expo-sqlite';
 
 export default function ProfileScreen() {
   const t = useT();
-  const db = useSQLiteContext();
+  const db = useDb();
   const { store, snapshot, refresh, today } = useApp();
   if (!snapshot?.profile || !snapshot.programme) return null;
   const profile = snapshot.profile;
@@ -135,7 +135,7 @@ export default function ProfileScreen() {
             destructive: true,
             onConfirm: async () => {
               await cancelReminders();
-              await wipeLocalData(db as unknown as Db);
+              await wipeLocalData(db);
               await refresh();
               router.replace('/welcome');
             },

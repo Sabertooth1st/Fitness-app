@@ -1,8 +1,8 @@
 import { Stack } from 'expo-router';
-import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { migrate, type Db } from '../data/local/db';
+import { migrate } from '../data/local/db';
+import { DbProvider } from '../data/local/DbProvider';
 import { AppProvider, useApp } from '../features/app/AppState';
 import { dark } from '../theme/tokens';
 
@@ -36,11 +36,11 @@ function Navigator() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <SQLiteProvider databaseName="arrive.db" onInit={(db) => migrate(db as unknown as Db)}>
+      <DbProvider onInit={migrate}>
         <AppProvider>
           <Navigator />
         </AppProvider>
-      </SQLiteProvider>
+      </DbProvider>
     </SafeAreaProvider>
   );
 }

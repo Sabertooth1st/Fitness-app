@@ -17,7 +17,7 @@
 | 11 | The gym pin stays on the device | It is not in the sync payload, the export or analytics. Check-in stores only the method and time. |
 | 12 | Content and templates carry `reviewStatus`. Outside `development`, only `approved` content is assignable | The engine enforces this in `checkEligibility` and `decideSession`. The content audit and release check also enforce it. |
 | 13 | Billing (RevenueCat) is not installed yet; the env flag defaults to `false` | The free pilot comes first. The webhook and entitlements schema exist server-side. |
-| 14 | Web export exists only for smoke testing | `expo-sqlite` on web needs wasm and COOP/COEP headers. Web is not a product target. |
+| 14 | Web exists only for smoke tests and a clickable preview | `expo-sqlite` on web needs cross-origin isolation, so `DbProvider.web.tsx` uses sql.js (SQLite compiled to JavaScript) and saves to localStorage. Phones always use `DbProvider.tsx` (expo-sqlite). Web is not a product target; async route splitting is off for web so the preview can be one file. |
 
 ## Comeback Coach (src/domain/coach.ts)
 

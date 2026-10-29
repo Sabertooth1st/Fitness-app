@@ -54,6 +54,7 @@ npx eas-cli@latest build --profile development   # cloud development build
 | `npm run test:db` | Supabase migration and RLS/sync tests on a throwaway local PostgreSQL |
 | `npm run e2e:web` | Browser smoke test of the guest flow (needs `npx expo export -p web --output-dir dist-web` first) |
 | `npm run content:audit` | Fails if any assignable movement lacks approval, a licence or media |
+| `npm run preview:web` | Builds `dist-preview/arrive.html`: one self-contained file for clicking through the app in a browser (preview only; uses sql.js storage instead of expo-sqlite) |
 | `npm run release-check` | Release gate: config, content, rules, legal placeholders, store info, blockers, tests |
 
 ## Repository map

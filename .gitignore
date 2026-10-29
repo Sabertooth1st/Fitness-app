@@ -53,3 +53,4 @@ content-private/
 coverage/
 dist-web/
 e2e/shots/
+dist-preview/
