@@ -1,0 +1,17 @@
+# Acceptance 2 (native): refusing location must leave a working manual route.
+# NOT YET RUN. Requires a native build and a device where permission can be denied.
+appId: ch.arrive.app
+---
+- launchApp
+- tapOn:
+    id: check-in
+- tapOn:
+    id: location-check-in
+- tapOn: "Continue"
+- tapOn: "Don.t Allow|Don’t allow|Deny"
+- assertVisible:
+    id: manual-check-in
+- tapOn:
+    id: manual-check-in
+- assertVisible:
+    id: safety-no
