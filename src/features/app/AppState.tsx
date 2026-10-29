@@ -100,8 +100,9 @@ export function useApp(): AppContextValue {
   return ctx;
 }
 
+/** Falls back to the light palette outside the provider (component tests, previews). */
 export function usePalette(): Palette {
-  return useApp().palette;
+  return useContext(AppContext)?.palette ?? light;
 }
 
 /** Assemble Comeback Coach inputs from the local snapshot. */

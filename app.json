@@ -27,7 +27,8 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png"

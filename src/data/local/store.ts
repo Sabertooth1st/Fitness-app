@@ -251,13 +251,6 @@ export class LocalStore {
           now,
         ],
       );
-      for (const [position, ex] of d.exercises.entries()) {
-        await db.runAsync(
-          `INSERT INTO workout_exercises (id, session_id, position, slot_id, exercise_id, status, prescription, exercise_snapshot, updated_at)
-           VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
-          [this.deps.newId(), id, position, ex.slotId, ex.exerciseId, JSON.stringify(ex.prescription), JSON.stringify(input.catalogue[ex.exerciseId]), now],
-        );
-      }
       // Only method, session reference and time are recorded for check-in. No coordinates.
       await this.enqueue(db, 'workout_session', id, 'upsert', {
         id,
@@ -267,7 +260,27 @@ export class LocalStore {
         checkInMethod: input.checkInMethod,
         checkInAt: now,
         status: 'active',
+        deviceId,
       });
+      for (const [position, ex] of d.exercises.entries()) {
+        const exId = this.deps.newId();
+        const snapshot = input.catalogue[ex.exerciseId];
+        await db.runAsync(
+          `INSERT INTO workout_exercises (id, session_id, position, slot_id, exercise_id, status, prescription, exercise_snapshot, updated_at)
+           VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)`,
+          [exId, id, position, ex.slotId, ex.exerciseId, JSON.stringify(ex.prescription), JSON.stringify(snapshot), now],
+        );
+        await this.enqueue(db, 'workout_exercise', exId, 'upsert', {
+          id: exId,
+          sessionId: id,
+          position,
+          slotId: ex.slotId,
+          exerciseId: ex.exerciseId,
+          status: 'pending',
+          prescription: ex.prescription,
+          contentVersion: snapshot?.contentVersion ?? null,
+        });
+      }
       return id;
     });
   }
@@ -438,6 +451,17 @@ export class LocalStore {
         ],
       );
       await db.runAsync("UPDATE workout_exercises SET status = 'replaced', replaced_by = ?, updated_at = ? WHERE id = ?", [newId, now, ex.id]);
+      await this.enqueue(db, 'workout_exercise', newId, 'upsert', {
+        id: newId,
+        sessionId: ex.session_id,
+        position: ex.position + 1,
+        slotId: ex.slot_id,
+        exerciseId: replacement.id,
+        status: 'pending',
+        reason,
+        prescription: { ...prescription, sets: Math.max(1, prescription.sets - logged) },
+        contentVersion: replacement.contentVersion,
+      });
       await this.enqueue(db, 'workout_exercise', ex.id, 'upsert', { id: ex.id, status: 'replaced', replacedBy: newId, reason });
       return newId;
     });

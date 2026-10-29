@@ -113,8 +113,9 @@ describe('LocalStore', () => {
     const s = (await store.getActiveSession())!;
     await store.logSet({ sessionExerciseId: s.exercises[0].id, reps: 10, weight: null, effort: null, kind: 'working' });
     const ops = await db.getAllAsync<{ op_id: string; entity: string; payload: string }>('SELECT op_id, entity, payload FROM outbox', []);
-    expect(ops.map((o) => o.entity)).toEqual(['workout_session', 'set_log']);
-    expect(new Set(ops.map((o) => o.op_id)).size).toBe(2);
+    const s0 = (await store.getActiveSession())!;
+    expect(ops.map((o) => o.entity)).toEqual(['workout_session', ...s0.exercises.map(() => 'workout_exercise'), 'set_log']);
+    expect(new Set(ops.map((o) => o.op_id)).size).toBe(ops.length);
     // The check-in record never contains coordinates.
     expect(ops[0].payload).not.toMatch(/lat|lon/i);
   });
