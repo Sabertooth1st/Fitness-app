@@ -1,0 +1,35 @@
+# Native smoke flow for a development or preview build (Maestro).
+# NOT YET RUN: requires a native build on a simulator/device. Record real
+# results in docs/TEST_REPORT.md; do not mark as passed without running it.
+appId: ch.arrive.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: adult-confirm
+- tapOn:
+    id: start-guest
+- repeat:
+    times: 7
+    commands:
+      - tapOn:
+          id: onboarding-next
+- assertVisible:
+    id: check-in
+- tapOn:
+    id: check-in
+- tapOn:
+    id: manual-check-in
+- tapOn:
+    id: safety-no
+- tapOn:
+    id: start-session
+- tapOn:
+    id: log-set
+# Acceptance 10: kill the app after a logged set and confirm it resumes.
+- stopApp
+- launchApp
+- assertVisible: "Set 1: .*"
+- tapOn:
+    id: pain
+- assertVisible: "Stop and rest"

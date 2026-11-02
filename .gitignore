@@ -51,3 +51,6 @@ content-private/
 
 # test output
 coverage/
+dist-web/
+e2e/shots/
+dist-preview/

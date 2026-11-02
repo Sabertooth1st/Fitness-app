@@ -1,0 +1,26 @@
+{
+  "appName": "ARRIVE",
+  "subtitle": "[[UNRESOLVED: confirm name availability and trademark search]]",
+  "shortDescription": "Know what to do at the gym today, learn every movement, and always have a manageable way back.",
+  "fullDescription": "[[UNRESOLVED: final copy after the pilot; must match implemented features and avoid outcome guarantees]]",
+  "category": "Health & Fitness",
+  "ageRating": "[[UNRESOLVED: complete store questionnaires]]",
+  "supportUrl": "[[UNRESOLVED: hosted website/support.html URL]]",
+  "privacyPolicyUrl": "[[UNRESOLVED: hosted website/privacy.html URL]]",
+  "accountDeletionUrl": "[[UNRESOLVED: hosted website/delete-account.html URL]]",
+  "permissionExplanations": {
+    "locationWhenInUse": "Used only when you tap “Check with my location” to compare your position with the gym location saved on your phone. Not uploaded, not used in the background.",
+    "notifications": "Optional reminders on your planned training days."
+  },
+  "dataSafetyDraft": {
+    "collectedWithoutAccount": "None leaves the device.",
+    "collectedWithAccount": "Email address; fitness activity (sessions, sets, effort answers); app preferences.",
+    "location": "Not collected. Location is evaluated on-device only.",
+    "sharedWithThirdParties": "No (processors only, acting on our behalf).",
+    "encryptedInTransit": "Yes (HTTPS).",
+    "deletionRequestMechanism": "In-app and via the account deletion web page.",
+    "healthAppsDeclaration": "[[UNRESOLVED: complete Google Play health apps declaration]]"
+  },
+  "appReviewNotes": "Location is optional; tap “Yes, I’m at the gym” to check in without it. No account is required. Billing is disabled in this build.",
+  "screenshots": "[[UNRESOLVED: capture from a real device build]]"
+}
