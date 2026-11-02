@@ -91,6 +91,16 @@ describe('LocalStore', () => {
     expect((await store.finishSession(id)).finishedAt).toBe(done.finishedAt);
   });
 
+  it('records hard-day sessions and migrates the column', async () => {
+    const { store } = await setup();
+    const id = await store.startSession({ decision: trainDecision(), ...startArgs, hardDay: true });
+    const s = (await store.getActiveSession())!;
+    expect(s.hardDay).toBe(true);
+    await store.logSet({ sessionExerciseId: s.exercises[0].id, reps: 8, weight: null, effort: null, kind: 'working' });
+    await store.finishSession(id);
+    expect((await store.listHistory())[0]).toMatchObject({ hardDay: true, outcome: 'partial' });
+  });
+
   it('records a safety stop distinctly', async () => {
     const { store } = await setup();
     const id = await store.startSession({ decision: trainDecision(), ...startArgs });

@@ -8,29 +8,23 @@ The main feature is **Comeback Coach**. It is a deterministic rules engine (no A
 
 ## What works today
 
-- Local guest start, with no account. Onboarding asks for goal, experience, 2–3 training days, session length, equipment, units and exclusions.
-- The Today screen has training, rest, paused, completed, return and no-valid-session states. A missed session is never doubled.
-- Full plan preview and setup lessons are available before arriving at the gym.
-- Check-in can be manual (always available) or location-assisted. Location assistance is optional, foreground-only and evaluated on the device.
-- A readiness step asks about time, how you feel today, and safety. A safety concern stops the session before anything else happens.
-- Guided workout:
-  - logging each set takes one or two taps
-  - you can edit a logged set
-  - the effort question uses plain language
-  - the rest timer is stored as a deadline
-  - "busy", "too hard" and "not sure" each offer approved swaps
-  - "pain/stop" ends the session safely
-- Resume after the app is closed, with every set saved in a SQLite transaction.
-- Summary screen shows the honest outcome (full / partial / introductory / safety stop), capped habit XP, and lets you update your confidence with each movement.
-- Learn library with filters. Exercise detail includes an original front/back muscle diagram with written labels.
-- Progress shows "N of M planned sessions this week", completed weeks, permanent levels and history.
-- Profile:
-  - pause and resume the plan
-  - units, theme and reduced motion
-  - optional reminders
-  - JSON export
-  - delete all local data
-- Supabase schema with RLS, and an idempotent sync function. A sync outbox and engine are tested; the account UI is not built yet.
+- **Design:** dark-first "iron and chalk" look (graphite surfaces, chalk text, safety-yellow accent) with a bold condensed display font (Barlow Condensed) and a matching light mode.
+- **Built for the hard days:**
+  - A daily line on Today, plus "weeks in a row" (paused weeks never break the run) and a "hard days beaten" counter.
+  - **Hard-day mode** ("Hard day? Don't skip. Shrink it."): pick what's in the way and get a 20-minute short session. For "I don't feel like it", the deal is: check in and do the first exercise, and that counts.
+  - Badges at 1, 5, 10, 25, 50 and 100 hard days beaten. Hard days never add volume and never override the safety stop.
+- **Exercise library: 92 movements** across 17 movement types and 24 kinds of equipment (machines, barbell, dumbbells, kettlebells, cables, bars, bands, cardio). Each has setup steps, key points, mistakes to avoid, when to stop, a muscle diagram, and easier / swap / next-level links. All are marked NOT REVIEWED.
+- **Learn tab:** "Gym basics" lessons (sets and reps, picking a weight, rest, etiquette, soreness vs pain), search, and filters by type, equipment, muscle and level.
+- **Guest flow:** onboarding (grouped equipment) → Today → plan preview → check-in → readiness and safety → guided workout → summary.
+- **Workout player:**
+  - progress strip across exercises and a big set counter
+  - logging a set takes one or two taps, with a short encouragement after each set
+  - effort question and a rest timer stored as a deadline
+  - approved swaps for "busy", "too hard" and "not sure"
+  - "Pain: stop" ends the session safely
+  - resume after the app is closed
+- **Comeback Coach** (deterministic): picks the next session from actual completion history, never doubles a missed session, offers short, learn-the-gym and comeback sessions, and treats exclusions as hard constraints.
+- **Progress, Profile, Supabase schema with RLS, sync outbox, release gate:** as before.
 
 ## Run it
 
@@ -52,7 +46,7 @@ npx eas-cli@latest build --profile development   # cloud development build
 | `npm run lint` | Expo ESLint config |
 | `npm test` | Domain, repository (real SQLite via `node:sqlite`), sync, content and component tests |
 | `npm run test:db` | Supabase migration and RLS/sync tests on a throwaway local PostgreSQL |
-| `npm run e2e:web` | Browser smoke test of the guest flow (needs `npx expo export -p web --output-dir dist-web` first) |
+| `npm run e2e:web` | Browser end-to-end suite: full session, hard day, busy swap, pain stop, resume after reload, every exercise page, both themes (needs `npx expo export -p web --output-dir dist-web` first) |
 | `npm run content:audit` | Fails if any assignable movement lacks approval, a licence or media |
 | `npm run preview:web` | Builds `dist-preview/arrive.html`: one self-contained file for clicking through the app in a browser (preview only; uses sql.js storage instead of expo-sqlite) |
 | `npm run release-check` | Release gate: config, content, rules, legal placeholders, store info, blockers, tests |
@@ -70,7 +64,7 @@ src/features/       App state, check-in location, workout widgets, settings help
 src/i18n/           English strings and a draft Swiss High German locale
 supabase/           Migrations, RLS tests, Edge Functions
 scripts/            Content import/audit, release check, DB test runner
-e2e/                Web smoke test and Maestro native flows (native flows not yet run)
+e2e/                Web end-to-end suite and Maestro native flows (native flows not yet run)
 website/            Draft privacy, terms, support and account-deletion pages
 store/              Draft store listing and data-safety answers
 docs/               Architecture, content, privacy, test report, release checklist and blockers

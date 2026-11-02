@@ -21,11 +21,12 @@ if (scripts.length === 0) throw new Error('No bundles found in dist-web/index.ht
 const styles = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join('\n');
 
 // Bundled images are referenced by absolute path; embed them so the single file is self-contained.
+const MIME = { png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', ttf: 'font/ttf', otf: 'font/otf' };
 const embedAssets = (code) =>
-  code.replace(/uri:"(\/assets\/[^"]+\.(png|jpg|gif|webp))"/g, (match, uri, ext) => {
+  code.replace(/"(\/assets\/[^"]+\.(png|jpg|gif|webp|ttf|otf))"/g, (match, uri, ext) => {
     try {
       const data = readFileSync(join(dist, uri)).toString('base64');
-      return `uri:"data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${data}"`;
+      return `"data:${MIME[ext]};base64,${data}"`;
     } catch {
       return match;
     }

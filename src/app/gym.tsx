@@ -1,13 +1,13 @@
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { TextInput } from 'react-native';
-import { Body, Button, Card, Choice, Heading, Screen } from '../components/ui';
+import { TextInput, View } from 'react-native';
+import { Body, Button, Card, Choice, Eyebrow, Screen } from '../components/ui';
 import { CHECK_IN_RULES } from '../domain/rules';
-import { ALL_EQUIPMENT, type Equipment } from '../domain/types';
+import { ALL_EQUIPMENT, EQUIPMENT_GROUPS, type Equipment } from '../domain/types';
 import { useApp } from '../features/app/AppState';
 import { ensureForegroundPermission, readPosition } from '../features/check-in/location';
 import { useT } from '../i18n';
-import { radius, spacing } from '../theme/tokens';
+import { fonts, radius, spacing } from '../theme/tokens';
 
 export default function Gym() {
   const t = useT();
@@ -25,20 +25,25 @@ export default function Gym() {
   return (
     <Screen edges={['bottom']}>
       <Stack.Screen options={{ title: t('gym.title') }} />
-      <Heading>{t('gym.label')}</Heading>
+      <Eyebrow tone="accent">{t('gym.label')}</Eyebrow>
       <TextInput
         value={label}
         onChangeText={setLabel}
         onBlur={() => void save({})}
         accessibilityLabel={t('gym.label')}
-        style={{ minHeight: 50, borderWidth: 1, borderColor: palette.border, borderRadius: radius.md, paddingHorizontal: spacing.md, color: palette.text, backgroundColor: palette.surface, fontSize: 16 }}
+        style={{ minHeight: 50, borderWidth: 1, borderColor: palette.border, borderRadius: radius.md, paddingHorizontal: spacing.md, color: palette.text, backgroundColor: palette.surface, fontSize: 16, fontFamily: fonts.body }}
       />
-      <Heading>{t('gym.equipment')}</Heading>
-      {ALL_EQUIPMENT.map((e) => (
-        <Choice key={e} multi label={t.dyn(`equipment.${e}`)} selected={gym.equipment.includes(e)} onPress={() => toggle(e)} />
+      <Eyebrow tone="accent">{t('gym.equipment')}</Eyebrow>
+      {EQUIPMENT_GROUPS.map((g) => (
+        <View key={g.key} style={{ gap: spacing.sm }}>
+          <Eyebrow>{t.dyn(`onboarding.group_${g.key}`)}</Eyebrow>
+          {g.items.map((e) => (
+            <Choice compact key={e} multi label={t.dyn(`equipment.${e}`)} selected={gym.equipment.includes(e)} onPress={() => toggle(e)} />
+          ))}
+        </View>
       ))}
       <Card>
-        <Heading>{t('gym.pinTitle')}</Heading>
+        <Eyebrow tone="accent">{t('gym.pinTitle')}</Eyebrow>
         <Body>{t('gym.pinBody')}</Body>
         <Button
           variant="secondary"

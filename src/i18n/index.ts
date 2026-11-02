@@ -4,19 +4,35 @@ import { deCHDraft } from './de-CH.draft';
 import type { LocaleCode } from '../data/local/models';
 
 type Path<T, P extends string = ''> = {
-  [K in keyof T & (string | number)]: T[K] extends string ? `${P}${K}` : Path<T[K], `${P}${K}.`>;
+  [K in keyof T & (string | number)]: T[K] extends string ? `${P}${K}` : T[K] extends string[] ? never : Path<T[K], `${P}${K}.`>;
+}[keyof T & (string | number)];
+
+type ListPath<T, P extends string = ''> = {
+  [K in keyof T & (string | number)]: T[K] extends string ? never : T[K] extends string[] ? `${P}${K}` : ListPath<T[K], `${P}${K}.`>;
 }[keyof T & (string | number)];
 
 export type TranslationKey = Path<Dictionary>;
+export type TranslationListKey = ListPath<Dictionary>;
 export type TranslateParams = Record<string, string | number>;
 
-function lookup(dict: unknown, key: string): string | undefined {
+function lookupNode(dict: unknown, key: string): unknown {
   let node: unknown = dict;
   for (const part of key.split('.')) {
     if (node === null || typeof node !== 'object') return undefined;
     node = (node as Record<string, unknown>)[part];
   }
+  return node;
+}
+
+function lookup(dict: unknown, key: string): string | undefined {
+  const node = lookupNode(dict, key);
   return typeof node === 'string' ? node : undefined;
+}
+
+export function translateList(locale: LocaleCode, key: TranslationListKey): string[] {
+  const fromLocale = locale === 'de-CH' ? lookupNode(deCHDraft, key) : undefined;
+  const node = Array.isArray(fromLocale) ? fromLocale : lookupNode(en, key);
+  return Array.isArray(node) ? (node as string[]) : [];
 }
 
 export function translate(locale: LocaleCode, key: TranslationKey, params?: TranslateParams): string {
@@ -38,6 +54,7 @@ export function useT() {
     () =>
       Object.assign((key: TranslationKey, params?: TranslateParams) => translate(locale, key, params), {
         dyn: (key: string, params?: TranslateParams) => translateDynamic(locale, key, params),
+        list: (key: TranslationListKey) => translateList(locale, key),
         locale,
       }),
     [locale],

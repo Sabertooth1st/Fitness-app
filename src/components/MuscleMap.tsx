@@ -36,6 +36,7 @@ const FRONT: Partial<Record<Muscle, Shape[]>> = {
 };
 
 const BACK: Partial<Record<Muscle, Shape[]>> = {
+  traps: [{ kind: 'ellipse', cx: 60, cy: 46, rx: 14, ry: 6 }],
   rear_shoulders: mirror(36, 55, 8, 7),
   side_shoulders: mirror(29, 60, 4, 7),
   upper_back: [{ kind: 'rect', x: 46, y: 52, w: 28, h: 20 }],
@@ -77,7 +78,7 @@ function Figure({ regions, primary, secondary, label }: { regions: Partial<Recor
               key={`${m}-${i}`}
               s={s}
               fill={isPrimary ? p.musclePrimary : p.muscleSecondary}
-              stroke={p.text}
+              stroke={p.muscleOutline}
               dashed={isSecondary}
             />
           ));
@@ -101,11 +102,11 @@ export function MuscleMap({ primary, secondary }: { primary: Muscle[]; secondary
         <Figure regions={BACK} primary={primary} secondary={secondary} label={t('exercise.backView')} />
       </Row>
       <View style={{ gap: 2 }}>
-        <Text style={[styles.body, { color: p.text, fontWeight: '700' }]}>■ {t('exercise.primary')}</Text>
+        <Text style={[styles.eyebrow, { color: p.accentInk }]}>■ {t('exercise.primary')}</Text>
         <Body>{primary.map((m) => t.dyn(`muscle.${m}`)).join(', ')}</Body>
         {secondary.length > 0 && (
           <>
-            <Text style={[styles.body, { color: p.text, fontWeight: '700', marginTop: spacing.xs }]}>⬚ {t('exercise.secondary')}</Text>
+            <Text style={[styles.eyebrow, { color: p.textMuted, marginTop: spacing.sm }]}>⬚ {t('exercise.secondary')}</Text>
             <Body>{secondary.map((m) => t.dyn(`muscle.${m}`)).join(', ')}</Body>
           </>
         )}

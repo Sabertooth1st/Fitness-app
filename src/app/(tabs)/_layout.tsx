@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { LearnIcon, ProfileIcon, ProgressIcon, TodayIcon } from '../../components/icons';
 import { useApp } from '../../features/app/AppState';
 import { useT } from '../../i18n';
+import { fonts } from '../../theme/tokens';
 
 export default function TabsLayout() {
   const t = useT();
@@ -10,10 +11,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: palette.accent,
+        tabBarActiveTintColor: palette.accentInk,
         tabBarInactiveTintColor: palette.textMuted,
-        tabBarStyle: { backgroundColor: palette.surface, borderTopColor: palette.border },
-        tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
+        tabBarStyle: { backgroundColor: palette.surface, borderTopColor: palette.border, minHeight: 64, paddingTop: 6 },
+        tabBarLabelStyle: { fontSize: 12, fontFamily: fonts.bodyBold, letterSpacing: 0.8, textTransform: 'uppercase' },
         sceneStyle: { backgroundColor: palette.background },
       }}
     >

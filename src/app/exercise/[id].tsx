@@ -2,12 +2,13 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import { ExerciseMedia } from '../../components/ExerciseMedia';
 import { MuscleMap } from '../../components/MuscleMap';
-import { Body, BulletList, Button, Card, Choice, Heading, Pill, Screen } from '../../components/ui';
+import { Body, BulletList, Button, Card, Choice, Eyebrow, Pill, Row, Screen, Small, Title } from '../../components/ui';
 import { COACH_RULES, XP_RULES } from '../../domain/rules';
 import { evaluateDay } from '../../domain/schedule';
 import type { Familiarity } from '../../domain/types';
 import { catalogue, useApp } from '../../features/app/AppState';
 import { useT } from '../../i18n';
+import { spacing } from '../../theme/tokens';
 
 const LEVELS: Familiarity[] = ['new', 'reminder', 'comfortable'];
 
@@ -34,47 +35,64 @@ export default function ExerciseDetail() {
 
   if (!exercise || !snapshot) return null;
   const excluded = snapshot.exclusions.excludedExerciseIds.includes(exercise.id);
-  const alternatives = exercise.alternatives.map((a) => catalogue[a]).filter(Boolean);
+  const related = (ids: string[]) => ids.map((a) => catalogue[a]).filter(Boolean);
+  const alternatives = related(exercise.alternatives);
+  const easier = related(exercise.regressions);
+  const harder = related(exercise.progressions);
+  const links = (title: string, list: typeof alternatives) =>
+    list.length > 0 && (
+      <Card>
+        <Eyebrow tone="accent">{title}</Eyebrow>
+        {list.map((a) => (
+          <Button key={a.id} variant="secondary" label={a.name.en} onPress={() => router.push(`/exercise/${a.id}`)} />
+        ))}
+      </Card>
+    );
 
   return (
     <Screen edges={['bottom']}>
       <Stack.Screen options={{ title: exercise.name.en }} />
-      <Heading>{exercise.name.en}</Heading>
-      {exercise.reviewStatus !== 'approved' && <Pill label={t('common.devContent')} tone="warning" />}
+      <Eyebrow tone="accent">{t.dyn(`pattern.${exercise.pattern}`)}</Eyebrow>
+      <Title>{exercise.name.en}</Title>
+      <Row gap={spacing.sm} wrap>
+        <Pill tone="solid" label={t.dyn(`learn.difficulty_${exercise.skill}`)} />
+        {exercise.reviewStatus !== 'approved' && <Pill label={t('common.devContent')} tone="warning" />}
+      </Row>
       <ExerciseMedia exercise={exercise} />
       <Card>
-        <Heading>{t('exercise.equipment')}</Heading>
+        <Eyebrow tone="accent">{t('exercise.equipment')}</Eyebrow>
         <Body>{exercise.equipment.length ? exercise.equipment.map((q) => t.dyn(`equipment.${q}`)).join(' · ') : t('exercise.noEquipment')}</Body>
       </Card>
       <Card>
-        <Heading>{t('workout.setup')}</Heading>
+        <Eyebrow tone="accent">{t('workout.setup')}</Eyebrow>
         <BulletList items={exercise.setup.en} />
       </Card>
       <Card>
-        <Heading>{t('workout.cues')}</Heading>
+        <Eyebrow tone="accent">{t('workout.cues')}</Eyebrow>
         {exercise.cues.en.map((c, i) => (
           <Body key={i}>• {c}</Body>
         ))}
       </Card>
       <Card>
-        <Heading>{t('workout.mistakes')}</Heading>
+        <Eyebrow tone="accent">{t('workout.mistakes')}</Eyebrow>
         {exercise.mistakes.en.map((c, i) => (
           <Body key={i}>• {c}</Body>
         ))}
       </Card>
       <Card>
-        <Heading>{t('exercise.musclesWorked')}</Heading>
+        <Eyebrow tone="accent">{t('exercise.musclesWorked')}</Eyebrow>
         <MuscleMap primary={exercise.primaryMuscles} secondary={exercise.secondaryMuscles} />
       </Card>
       <Card tone="danger">
-        <Heading>{t('exercise.stop')}</Heading>
+        <Eyebrow tone="accent">{t('exercise.stop')}</Eyebrow>
         <Body>{exercise.stopGuidance.en}</Body>
       </Card>
       <Card>
-        <Heading>{t('familiarity.question')}</Heading>
-        <Body muted>{t('familiarity.note')}</Body>
+        <Eyebrow tone="accent">{t('familiarity.question')}</Eyebrow>
+        <Small>{t('familiarity.note')}</Small>
         {LEVELS.map((f) => (
           <Choice
+            compact
             key={f}
             label={t.dyn(`familiarity.${f}`)}
             selected={(snapshot.familiarity[exercise.id] ?? 'new') === f}
@@ -85,14 +103,9 @@ export default function ExerciseDetail() {
           />
         ))}
       </Card>
-      {alternatives.length > 0 && (
-        <Card>
-          <Heading>{t('exercise.alternatives')}</Heading>
-          {alternatives.map((a) => (
-            <Button key={a.id} variant="ghost" label={a.name.en} onPress={() => router.push(`/exercise/${a.id}`)} />
-          ))}
-        </Card>
-      )}
+      {links(t('exercise.easier'), easier)}
+      {links(t('exercise.alternatives'), alternatives)}
+      {links(t('exercise.harder'), harder)}
       {excluded && <Body>{t('exercise.excluded')}</Body>}
       <Button
         variant="secondary"

@@ -8,9 +8,9 @@ jest.mock('expo-crypto', () => ({ randomUUID: () => 'id' }));
 describe('accessibility', () => {
   it('muscle map always provides written labels and a screen-reader summary', async () => {
     await render(<MuscleMap primary={['quadriceps', 'glutes']} secondary={['hamstrings']} />);
-    expect(screen.getByText('Quadriceps (front of thigh), Glutes (buttocks)')).toBeTruthy();
+    expect(screen.getByText('Quads (front of thigh), Glutes')).toBeTruthy();
     expect(screen.getByText('Hamstrings (back of thigh)')).toBeTruthy();
-    expect(screen.getByLabelText(/Main muscles: Quadriceps.*Also working: Hamstrings/)).toBeTruthy();
+    expect(screen.getByLabelText(/Main muscles: Quads.*Also working: Hamstrings/)).toBeTruthy();
     // It never claims measured activation.
     expect(screen.getByText(/does not measure activation or injury/)).toBeTruthy();
   });

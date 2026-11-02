@@ -1,5 +1,5 @@
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { MIN_TOUCH, radius, spacing } from '../../theme/tokens';
+import { fonts, MIN_TOUCH, radius, spacing } from '../../theme/tokens';
 import { usePalette } from '../app/AppState';
 
 /** Large +/- number input; also accepts typed values. */
@@ -32,17 +32,17 @@ export function Stepper({
         borderRadius: radius.md,
         borderWidth: 1,
         borderColor: p.border,
-        backgroundColor: p.surface,
+        backgroundColor: p.surfaceRaised,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Text style={{ fontSize: 24, fontWeight: '700', color: p.text }}>{symbol}</Text>
+      <Text style={{ fontSize: 26, fontFamily: fonts.display, color: p.text }}>{symbol}</Text>
     </Pressable>
   );
   return (
     <View style={{ alignSelf: 'stretch', gap: spacing.xs }}>
-      <Text style={{ fontSize: 14, fontWeight: '600', color: p.textMuted }}>
+      <Text style={{ fontSize: 12, fontFamily: fonts.bodyBold, letterSpacing: 1.2, textTransform: 'uppercase', color: p.textMuted }}>
         {label}
         {suffix ? ` (${suffix})` : ''}
       </Text>
@@ -66,8 +66,8 @@ export function Stepper({
             width: '100%',
             minHeight: MIN_TOUCH + 8,
             textAlign: 'center',
-            fontSize: 22,
-            fontWeight: '700',
+            fontSize: 28,
+            fontFamily: fonts.display,
             color: p.text,
             borderWidth: 1,
             borderColor: p.border,

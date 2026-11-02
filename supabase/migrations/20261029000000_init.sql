@@ -156,6 +156,7 @@ create table public.workout_sessions (
   check_in_at timestamptz,
   finished_at timestamptz,
   device_id text,
+  hard_day boolean not null default false,
   updated_at timestamptz not null default now()
 );
 create index on public.workout_sessions (user_id, local_date);
@@ -375,9 +376,10 @@ begin
         elsif p->>'localDate' is null or p->>'status' is null then
           op_result := 'retry_parent_missing';
         else
-          insert into workout_sessions (id, user_id, local_date, status, outcome, variant, session_key, check_in_method, check_in_at, finished_at, device_id)
+          insert into workout_sessions (id, user_id, local_date, status, outcome, variant, session_key, check_in_method, check_in_at, finished_at, device_id, hard_day)
           values ((p->>'id')::uuid, uid, (p->>'localDate')::date, p->>'status', p->>'outcome', p->>'variant', p->>'sessionKey',
-                  p->>'checkInMethod', (p->>'checkInAt')::timestamptz, (p->>'finishedAt')::timestamptz, p->>'deviceId');
+                  p->>'checkInMethod', (p->>'checkInAt')::timestamptz, (p->>'finishedAt')::timestamptz, p->>'deviceId',
+                  coalesce((p->>'hardDay')::boolean, false));
           if p ? 'checkInMethod' then
             insert into check_ins (session_id, user_id, method, checked_in_at)
             values ((p->>'id')::uuid, uid, p->>'checkInMethod', (p->>'checkInAt')::timestamptz)

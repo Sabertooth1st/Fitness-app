@@ -1,7 +1,8 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { View } from 'react-native';
 import { confirmAction } from '../../components/confirm';
-import { Body, Button, Card, Choice, Heading, Row, Screen, Title } from '../../components/ui';
+import { Body, Button, Card, Choice, Eyebrow, Row, Screen, Small, Title } from '../../components/ui';
 import { addDays } from '../../domain/dates';
 import { cloudConfigured, env } from '../../config/env';
 import { wipeLocalData } from '../../data/local/db';
@@ -34,8 +35,8 @@ export default function ProfileScreen() {
       <Button variant="secondary" label={t('profile.gym')} onPress={() => router.push('/gym')} />
 
       <Card>
-        <Heading>{programme.pause ? t('today.pausedTitle') : t('profile.pause')}</Heading>
-        <Body muted>{t('profile.pauseNote')}</Body>
+        <Eyebrow tone="accent">{programme.pause ? t('today.pausedTitle') : t('profile.pause')}</Eyebrow>
+        <Small>{t('profile.pauseNote')}</Small>
         {programme.pause ? (
           <Button
             label={t('profile.resume')}
@@ -50,7 +51,7 @@ export default function ProfileScreen() {
               <Button
                 key={d}
                 variant="secondary"
-                label={`${d} days`}
+                label={t('profile.pauseDays', { n: d })}
                 onPress={async () => {
                   await store.setProgramme({ ...programme, pause: { from: today(), until: addDays(today(), d - 1) } });
                   await refresh();
@@ -62,15 +63,19 @@ export default function ProfileScreen() {
       </Card>
 
       <Card>
-        <Heading>{t('profile.units')}</Heading>
+        <Eyebrow tone="accent">{t('profile.units')}</Eyebrow>
         <Row gap={spacing.sm}>
-          <Choice label="kg" selected={profile.units === 'kg'} onPress={() => update({ units: 'kg' })} />
-          <Choice label="lb" selected={profile.units === 'lb'} onPress={() => update({ units: 'lb' })} />
+          <View style={{ flex: 1 }}>
+            <Choice label="kg" selected={profile.units === 'kg'} onPress={() => update({ units: 'kg' })} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Choice label="lb" selected={profile.units === 'lb'} onPress={() => update({ units: 'lb' })} />
+          </View>
         </Row>
       </Card>
 
       <Card>
-        <Heading>{t('profile.theme')}</Heading>
+        <Eyebrow tone="accent">{t('profile.theme')}</Eyebrow>
         {(['system', 'light', 'dark'] as const).map((th) => (
           <Choice key={th} label={t.dyn(`profile.theme_${th}`)} selected={profile.theme === th} onPress={() => update({ theme: th })} />
         ))}
@@ -84,8 +89,8 @@ export default function ProfileScreen() {
       </Card>
 
       <Card>
-        <Heading>{t('profile.reminders')}</Heading>
-        <Body muted>{t('profile.remindersNote')}</Body>
+        <Eyebrow tone="accent">{t('profile.reminders')}</Eyebrow>
+        <Small>{t('profile.remindersNote')}</Small>
         <Choice
           multi
           label={t('profile.reminders')}
@@ -108,7 +113,7 @@ export default function ProfileScreen() {
       </Card>
 
       <Card>
-        <Heading>{t('profile.language')}</Heading>
+        <Eyebrow tone="accent">{t('profile.language')}</Eyebrow>
         <Choice label="English" selected={profile.locale === 'en'} onPress={() => update({ locale: 'en' })} />
         {env.appEnv === 'development' && (
           <Choice label={t('profile.languageDraft')} selected={profile.locale === 'de-CH'} onPress={() => update({ locale: 'de-CH' })} />
@@ -116,9 +121,9 @@ export default function ProfileScreen() {
       </Card>
 
       <Card>
-        <Heading>{t('profile.account')}</Heading>
+        <Eyebrow tone="accent">{t('profile.account')}</Eyebrow>
         <Body>{t('profile.accountGuest')}</Body>
-        {!cloudConfigured && <Body muted>{t('profile.accountNotConfigured')}</Body>}
+        {!cloudConfigured && <Small>{t('profile.accountNotConfigured')}</Small>}
       </Card>
 
       <Button variant="secondary" label={t('profile.export')} onPress={() => void exportJson(store)} />
@@ -142,7 +147,7 @@ export default function ProfileScreen() {
           })
         }
       />
-      <Body muted>{t('profile.version', { v: Constants.expoConfig?.version ?? '?', env: env.appEnv })}</Body>
+      <Small>{t('profile.version', { v: Constants.expoConfig?.version ?? '?', env: env.appEnv })}</Small>
     </Screen>
   );
 }

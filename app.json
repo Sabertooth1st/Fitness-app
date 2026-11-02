@@ -62,7 +62,8 @@
           "isAndroidForegroundServiceEnabled": false
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-font"
     ],
     "scheme": "arrive",
     "experiments": {

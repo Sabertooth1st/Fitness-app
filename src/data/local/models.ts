@@ -97,6 +97,7 @@ export interface WorkoutSession {
   restUntil: number | null;
   currentIndex: number;
   isReturn: boolean;
+  hardDay: boolean;
   deviceId: string;
   exercises: SessionExercise[];
 }

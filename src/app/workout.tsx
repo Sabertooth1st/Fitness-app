@@ -1,10 +1,11 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { confirmAction } from '../components/confirm';
 import { ExerciseMedia } from '../components/ExerciseMedia';
-import { Body, BulletList, Button, Card, Choice, Heading, Pill, Row, Screen } from '../components/ui';
+import { Body, BulletList, Button, Card, Choice, Eyebrow, Heading, Pill, Row, Screen, Small } from '../components/ui';
 import { earnsWelcomeBack } from '../domain/adherence';
+import { hardDayMilestoneKey, hardDayWins } from '../domain/motivation';
 import { suggestLoad, type LoadSuggestion } from '../domain/progression';
 import { COACH_RULES, XP_RULES } from '../domain/rules';
 import { findSubstitute, type SubstitutionTrigger } from '../domain/substitution';
@@ -17,7 +18,7 @@ import { catalogue, useApp } from '../features/app/AppState';
 import { RestTimer } from '../features/workout/RestTimer';
 import { Stepper } from '../features/workout/Stepper';
 import { useT } from '../i18n';
-import { spacing } from '../theme/tokens';
+import { fonts, radius, spacing } from '../theme/tokens';
 
 type Proposal = { trigger: SubstitutionTrigger; replacementId: string | null } | null;
 const EFFORTS: Effort[] = ['easy', 'about_right', 'hard'];
@@ -36,6 +37,9 @@ export default function Workout() {
   const [showSetup, setShowSetup] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [cheer, setCheer] = useState<string | null>(null);
+  const { deal } = useLocalSearchParams<{ deal?: string }>();
+
   const units = snapshot?.profile?.units ?? 'kg';
 
   const reload = useCallback(async () => {
@@ -48,7 +52,7 @@ export default function Workout() {
     // Loading persisted state from SQLite on mount; state is set after the async read.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void reload().then((s) => {
-      if (!s) router.replace('/(tabs)');
+      if (!s) router.dismissTo('/(tabs)');
     });
     void store.getDeviceId().then(setDeviceId);
   }, [reload, store]);
@@ -120,6 +124,8 @@ export default function Workout() {
       } else {
         const log = await store.logSet({ sessionExerciseId: current!.id, reps, weight: w, effort: null, kind: current!.prescription.setKind });
         setLastLogged(log);
+        const lines = t.list('workout.setDone');
+        setCheer(lines[(log.setIndex + index) % lines.length]);
         await store.setRestUntil(session!.id, Date.now() + current!.prescription.restSeconds * 1000);
       }
       await reload();
@@ -138,6 +144,7 @@ export default function Workout() {
   async function goTo(i: number) {
     await store.setCurrentIndex(session!.id, i);
     setLastLogged(null);
+    setCheer(null);
     await reload();
   }
 
@@ -178,6 +185,10 @@ export default function Workout() {
       const already = (snapshot?.milestones ?? []).some((m) => m.key === 'welcome_back');
       if (earnsWelcomeBack(already, finished.isReturn, finished.outcome)) await store.earnMilestone('welcome_back', finished.localDate);
       if (finished.outcome !== 'abandoned') await store.earnMilestone('first_session', finished.localDate);
+      if (finished.hardDay) {
+        const key = hardDayMilestoneKey(hardDayWins(await store.listHistory()));
+        if (key) await store.earnMilestone(key, finished.localDate);
+      }
     }
     await refresh();
     router.replace(`/summary/${finished.id}`);
@@ -197,60 +208,87 @@ export default function Workout() {
 
   const basisLabel = loadBasis === 'per_hand' ? t('workout.perHand') : loadBasis === 'machine_stack' ? t('workout.machineStack') : t('workout.total');
   const p = current.prescription;
+  const pal = palette;
+  const firstExerciseDone = (visible[0]?.sets.length ?? 0) > 0 && (visible[0]?.status === 'done' || index > 0);
 
   return (
     <Screen>
+      {/* Session progress: one block per exercise. */}
+      <View accessible accessibilityLabel={t('workout.exerciseOf', { n: index + 1, total: visible.length })} style={{ flexDirection: 'row', gap: 4 }}>
+        {visible.map((e, i) => (
+          <View
+            key={e.id}
+            style={{
+              flex: 1,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: e.status === 'done' ? pal.accent : i === index ? pal.text : pal.surfaceMuted,
+              opacity: e.status === 'skipped' ? 0.35 : 1,
+            }}
+          />
+        ))}
+      </View>
+      <Row gap={spacing.sm} wrap>
+        <Eyebrow tone="accent">{t('workout.exerciseOf', { n: index + 1, total: visible.length })}</Eyebrow>
+        <Pill label={t.dyn(`variant.${session.variant}`)} />
+        {session.hardDay && <Pill tone="solid" label={t('hardDay.title')} />}
+      </Row>
+
       {deviceId && session.deviceId !== deviceId && (
         <Card tone="warning">
           <Body>{t('workout.otherDevice')}</Body>
         </Card>
       )}
-      <Row gap={spacing.sm} wrap>
-        <Pill label={t('workout.exerciseOf', { n: index + 1, total: visible.length })} />
-        <Pill label={t.dyn(`variant.${session.variant}`)} tone="accent" />
-        {exercise.reviewStatus !== 'approved' && <Pill label={t('common.devContent')} tone="warning" />}
-      </Row>
-      <Text accessibilityRole="header" style={{ fontSize: 26, fontWeight: '700', color: palette.text }}>
+
+      {deal === '1' && firstExerciseDone && (
+        <Card tone="accent">
+          <Body bold>{t('workout.minimumMet')}</Body>
+        </Card>
+      )}
+
+      <Text accessibilityRole="header" style={{ fontFamily: fonts.display, fontSize: 34, lineHeight: 36, color: pal.text, textTransform: 'uppercase' }}>
         {exercise.name.en}
       </Text>
 
-      <ExerciseMedia exercise={exercise} />
+      {/* Set tracker */}
+      <View style={{ backgroundColor: pal.surface, borderColor: pal.border, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, gap: spacing.md }}>
+        <Row gap={spacing.md}>
+          <View style={{ flex: 1 }}>
+            <Eyebrow>{done ? t('workout.allSetsDone') : t('workout.setOf', { n: current.sets.length + 1, total: p.sets })}</Eyebrow>
+            <Text style={{ fontFamily: fonts.display, fontSize: 44, lineHeight: 46, color: done ? pal.success : pal.text, fontVariant: ['tabular-nums'] }}>
+              {Math.min(current.sets.length + (done ? 0 : 1), p.sets)}/{p.sets}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+            <Small>{t(p.setKind === 'familiarisation' ? 'preview.setsRepsFamiliarise' : 'preview.setsReps', { sets: p.sets, min: p.repsMin, max: p.repsMax })}</Small>
+            <Row gap={6}>
+              {Array.from({ length: p.sets }, (_, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 7,
+                    backgroundColor: i < current.sets.length ? pal.accent : 'transparent',
+                    borderWidth: 2,
+                    borderColor: i < current.sets.length ? pal.accent : pal.textMuted,
+                  }}
+                />
+              ))}
+            </Row>
+          </View>
+        </Row>
 
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: showSetup }} onPress={() => setShowSetup(!showSetup)}>
-        <Heading>
-          {showSetup ? '▾' : '▸'} {t('workout.setup')}
-        </Heading>
-      </Pressable>
-      {showSetup && (
-        <Card>
-          <BulletList items={exercise.setup.en} />
-          <Body muted>
-            {t('exercise.musclesWorked')}: {exercise.primaryMuscles.map((m) => t.dyn(`muscle.${m}`)).join(', ')}
-            {exercise.secondaryMuscles.length ? ` · ${exercise.secondaryMuscles.map((m) => t.dyn(`muscle.${m}`)).join(', ')}` : ''}
-          </Body>
-        </Card>
-      )}
-      <Card>
-        <Heading>{t('workout.cues')}</Heading>
-        {exercise.cues.en.map((c, i) => (
-          <Body key={i}>• {c}</Body>
-        ))}
-      </Card>
-
-      <Card>
-        <Heading>{done ? t('workout.allSetsDone') : t('workout.setOf', { n: current.sets.length + 1, total: p.sets })}</Heading>
-        <Body muted>
-          {t(p.setKind === 'familiarisation' ? 'preview.setsRepsFamiliarise' : 'preview.setsReps', { sets: p.sets, min: p.repsMin, max: p.repsMax })}
-        </Body>
-        {suggestion?.kind === 'familiarise' && current.sets.length === 0 && <Body>{t('workout.familiarise')}</Body>}
+        {suggestion?.kind === 'familiarise' && current.sets.length === 0 && <Small muted={false}>{t('workout.familiarise')}</Small>}
         {suggestion?.kind === 'suggest' && current.sets.length === 0 && (
-          <Body>
+          <Small muted={false}>
             {suggestion.change === 'reentry' ? t('workout.suggestedReentry') : t('workout.suggested')}: {suggestion.weight.value} {suggestion.weight.unit} {basisLabel}
-          </Body>
+          </Small>
         )}
+
         <Stepper testID="reps-input" label={t('workout.reps')} value={reps} onChange={setReps} step={1} />
         {loadBasis === 'bodyweight' ? (
-          <Body muted>{t('workout.bodyweight')}</Body>
+          <Small>{t('workout.bodyweight')}</Small>
         ) : (
           <Stepper
             testID="weight-input"
@@ -262,37 +300,48 @@ export default function Workout() {
             placeholder="—"
           />
         )}
-        <Button testID="log-set" label={editing ? t('common.save') : t('workout.logSet')} onPress={logSet} disabled={reps === null || saving || (done && !editing)} />
+        <Button testID="log-set" size="large" label={editing ? t('common.save') : t('workout.logSet')} onPress={logSet} disabled={reps === null || saving || (done && !editing)} />
 
-        {current.sets.length > 0 && <Body muted>{t('workout.editHint')}</Body>}
-        {current.sets.map((s) => {
-          const w = s.weight ? toDisplay(s.weight, units) : null;
-          return (
-            <Pressable
-              key={s.id}
-              accessibilityRole="button"
-              onPress={() => {
-                setEditing(s);
-                setReps(s.reps);
-                setWeight(w?.value ?? null);
-              }}
-              style={{ paddingVertical: spacing.xs }}
-            >
-              <Body>
-                {editing?.id === s.id ? '✎ ' : '✓ '}
-                {t('workout.loggedSet', { n: s.setIndex + 1, reps: s.reps, weight: w ? ` · ${w.value} ${w.unit}` : '' })}
-                {s.effort ? ` · ${t.dyn(`workout.effort_${s.effort}`)}` : ''}
-              </Body>
-            </Pressable>
-          );
-        })}
-      </Card>
+        {current.sets.length > 0 && (
+          <View style={{ gap: 2 }}>
+            {current.sets.map((s) => {
+              const w = s.weight ? toDisplay(s.weight, units) : null;
+              return (
+                <Pressable
+                  key={s.id}
+                  accessibilityRole="button"
+                  accessibilityHint={t('workout.editHint')}
+                  onPress={() => {
+                    setEditing(s);
+                    setReps(s.reps);
+                    setWeight(w?.value ?? null);
+                  }}
+                  style={{ paddingVertical: 6, flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}
+                >
+                  <Text style={{ fontFamily: fonts.bodyBold, color: editing?.id === s.id ? pal.accentInk : pal.success, width: 18 }}>
+                    {editing?.id === s.id ? '✎' : '✓'}
+                  </Text>
+                  <Body>
+                    {t('workout.loggedSet', { n: s.setIndex + 1, reps: s.reps, weight: w ? ` · ${w.value} ${w.unit}` : '' })}
+                    {s.effort ? ` · ${t.dyn(`workout.effort_${s.effort}`)}` : ''}
+                  </Body>
+                </Pressable>
+              );
+            })}
+            <Small>{t('workout.editHint')}</Small>
+          </View>
+        )}
+      </View>
+
+      {cheer && (
+        <Text style={{ fontFamily: fonts.displaySemi, fontSize: 22, color: pal.accentInk, textTransform: 'uppercase' }}>{cheer}</Text>
+      )}
 
       {lastLogged && lastLogged.effort === null && (
         <Card>
-          <Heading>{t('workout.effortQuestion')}</Heading>
+          <Body bold>{t('workout.effortQuestion')}</Body>
           {EFFORTS.map((e) => (
-            <Choice key={e} testID={`effort-${e}`} label={t.dyn(`workout.effort_${e}`)} selected={false} onPress={() => setEffort(e)} />
+            <Choice compact key={e} testID={`effort-${e}`} label={t.dyn(`workout.effort_${e}`)} selected={false} onPress={() => setEffort(e)} />
           ))}
         </Card>
       )}
@@ -311,7 +360,7 @@ export default function Workout() {
         <Card tone={proposal.replacementId ? 'accent' : 'warning'}>
           {proposal.trigger === 'unsure' && (
             <>
-              <Heading>{t('workout.askStaff')}</Heading>
+              <Eyebrow tone="accent">{t('workout.askStaff')}</Eyebrow>
               <Body>{t('workout.askStaffScript', { equipment: exercise.equipment.map((q) => t.dyn(`equipment.${q}`)).join(', ') || exercise.name.en })}</Body>
             </>
           )}
@@ -355,6 +404,32 @@ export default function Workout() {
         </View>
       </Row>
 
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showSetup }}
+        onPress={() => setShowSetup(!showSetup)}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 4 }}
+      >
+        <Text style={{ fontFamily: fonts.display, fontSize: 18, color: pal.accentInk }}>{showSetup ? '−' : '+'}</Text>
+        <Heading>{t('preview.lesson')}</Heading>
+      </Pressable>
+      {showSetup && (
+        <>
+          <ExerciseMedia exercise={exercise} />
+          <Card>
+            <Eyebrow tone="accent">{t('workout.setup')}</Eyebrow>
+            <BulletList items={exercise.setup.en} />
+            <Eyebrow tone="accent">{t('workout.cues')}</Eyebrow>
+            {exercise.cues.en.map((c, i) => (
+              <Body key={i}>• {c}</Body>
+            ))}
+            <Small>
+              {t('exercise.musclesWorked')}: {exercise.primaryMuscles.map((m) => t.dyn(`muscle.${m}`)).join(', ')}
+            </Small>
+          </Card>
+        </>
+      )}
+
       <Row gap={spacing.sm}>
         {index > 0 && (
           <View style={{ flex: 1 }}>
@@ -370,6 +445,7 @@ export default function Workout() {
         </View>
       </Row>
       {!isLast && <Button variant="ghost" label={t('workout.finish')} onPress={confirmFinish} />}
+      {exercise.reviewStatus !== 'approved' && <Small>{t('common.devContent')}</Small>}
     </Screen>
   );
 }

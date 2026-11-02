@@ -8,7 +8,7 @@
  */
 import type { Dictionary } from './en';
 
-type DeepPartial<T> = { [K in keyof T]?: T[K] extends string ? string : DeepPartial<T[K]> };
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends string ? string : T[K] extends string[] ? string[] : DeepPartial<T[K]> };
 
 export const deCHDraft: DeepPartial<Dictionary> = {
   common: { continue: 'Weiter', back: 'Zurück', cancel: 'Abbrechen', done: 'Fertig', save: 'Speichern', close: 'Schliessen' },

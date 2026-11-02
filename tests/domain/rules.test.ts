@@ -66,9 +66,18 @@ describe('substitution (acceptance 5, 6)', () => {
       trigger: 'busy',
       catalogue: DEV_CATALOGUE,
       familiarity: {},
-      ctx: { ...ctx, constraints: { ...ctx.constraints, excludedEquipment: ['dumbbells'], excludedExerciseIds: ['box_squat'] } },
+      ctx: {
+        ...ctx,
+        constraints: {
+          ...ctx.constraints,
+          availableEquipment: ['leg_press_machine', 'dumbbells', 'bench'],
+          excludedEquipment: ['dumbbells'],
+          excludedExerciseIds: ['box_squat'],
+        },
+      },
     });
-    expect(r).toEqual({ ok: true, replacementId: 'sit_to_stand', reason: 'approved_regression' });
+    // goblet squat (dumbbells), hack squat and Smith squat (unavailable) and box squat (excluded) are all skipped.
+    expect(r).toEqual({ ok: true, replacementId: 'bodyweight_squat', reason: 'approved_alternative' });
   });
 
   it('returns no_valid_substitute rather than an unsafe guess', () => {

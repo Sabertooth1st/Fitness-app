@@ -77,7 +77,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const themePref = snapshot?.profile?.theme ?? 'system';
+  const themePref = snapshot?.profile?.theme ?? 'dark';
   const palette = themePref === 'dark' || (themePref === 'system' && scheme === 'dark') ? dark : light;
   const timezone = deviceTimezone();
 

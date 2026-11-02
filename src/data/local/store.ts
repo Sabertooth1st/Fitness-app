@@ -65,6 +65,7 @@ interface SessionRow {
   current_index: number;
   is_return: number;
   device_id: string;
+  hard_day: number;
 }
 
 interface ExerciseRow {
@@ -221,6 +222,7 @@ export class LocalStore {
     timezone: string;
     checkInMethod: CheckInMethod;
     rulesVersion: string;
+    hardDay?: boolean;
   }): Promise<string> {
     const deviceId = await this.getDeviceId();
     return this.queue.run(async (db) => {
@@ -231,8 +233,8 @@ export class LocalStore {
       const d = input.decision;
       await db.runAsync(
         `INSERT INTO workout_sessions (id, local_date, timezone, status, outcome, variant, session_key, template_id, template_version,
-           rules_version, reasons, check_in_method, check_in_at, started_at, current_index, is_return, device_id, updated_at)
-         VALUES (?, ?, ?, 'active', NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`,
+           rules_version, reasons, check_in_method, check_in_at, started_at, current_index, is_return, device_id, updated_at, hard_day)
+         VALUES (?, ?, ?, 'active', NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`,
         [
           id,
           input.localDate,
@@ -249,6 +251,7 @@ export class LocalStore {
           d.isReturn ? 1 : 0,
           deviceId,
           now,
+          input.hardDay ? 1 : 0,
         ],
       );
       // Only method, session reference and time are recorded for check-in. No coordinates.
@@ -261,6 +264,7 @@ export class LocalStore {
         checkInAt: now,
         status: 'active',
         deviceId,
+        hardDay: !!input.hardDay,
       });
       for (const [position, ex] of d.exercises.entries()) {
         const exId = this.deps.newId();
@@ -352,6 +356,7 @@ export class LocalStore {
       restUntil: row.rest_until,
       currentIndex: row.current_index,
       isReturn: row.is_return === 1,
+      hardDay: row.hard_day === 1,
       deviceId: row.device_id,
       exercises,
     };
@@ -499,8 +504,8 @@ export class LocalStore {
   }
 
   async listHistory(): Promise<CompletedSession[]> {
-    const rows = await this.deps.db.getAllAsync<{ id: string; local_date: string; session_key: string; variant: CompletedSession['variant']; outcome: SessionOutcome }>(
-      "SELECT id, local_date, session_key, variant, outcome FROM workout_sessions WHERE status != 'active' AND outcome IS NOT NULL ORDER BY started_at",
+    const rows = await this.deps.db.getAllAsync<{ id: string; local_date: string; session_key: string; variant: CompletedSession['variant']; outcome: SessionOutcome; hard_day: number }>(
+      "SELECT id, local_date, session_key, variant, outcome, hard_day FROM workout_sessions WHERE status != 'active' AND outcome IS NOT NULL ORDER BY started_at",
       [],
     );
     const slots = await this.deps.db.getAllAsync<{ session_id: string; slot_id: string; exercise_id: string }>(
@@ -513,6 +518,7 @@ export class LocalStore {
       sessionKey: r.session_key,
       variant: r.variant,
       outcome: r.outcome,
+      hardDay: r.hard_day === 1,
       slotExercises: Object.fromEntries(slots.filter((s) => s.session_id === r.id).map((s) => [s.slot_id, s.exercise_id])),
     }));
   }

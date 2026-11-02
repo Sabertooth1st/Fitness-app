@@ -144,6 +144,10 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX IF NOT EXISTS outbox_pending ON outbox(status, next_attempt_at);
   `,
+  // v2: hard-day sessions
+  `
+  ALTER TABLE workout_sessions ADD COLUMN hard_day INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

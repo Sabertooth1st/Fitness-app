@@ -44,4 +44,4 @@ Cloud assets go in the private `exercise-media` bucket. The `media-url` Edge Fun
 
 ## What's in the repo now
 
-`src/content/exercises.dev.ts` holds 22 development movements that the engineering team wrote as placeholder text. They have no media and use the `internal-dev-text` licence marker. All are `not_reviewed`, and the content audit fails on them by design.
+`src/content/exercises.dev.ts` and `exercises.library.dev.ts` hold 92 development movements that the engineering team wrote as placeholder text. They have no media and use the `internal-dev-text` licence marker. All are `not_reviewed`, and the content audit fails on them by design.

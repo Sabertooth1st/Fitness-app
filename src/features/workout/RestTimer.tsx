@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { Button, Card } from '../../components/ui';
 import { useT } from '../../i18n';
+import { fonts } from '../../theme/tokens';
 import { usePalette } from '../app/AppState';
 
 function format(ms: number): string {
@@ -27,17 +28,18 @@ export function RestTimer({ deadline, onSkip }: { deadline: number; onSkip: () =
     <Card tone="accent">
       {remaining > 0 ? (
         <>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bodyBold, letterSpacing: 1.4, textTransform: 'uppercase', color: p.onAccentSoft }}>{t('workout.rest')}</Text>
           <Text
             accessibilityLiveRegion="polite"
             accessibilityLabel={t('workout.restRemaining', { time: format(remaining) })}
-            style={{ fontSize: 34, fontWeight: '700', color: p.onAccentSoft, fontVariant: ['tabular-nums'] }}
+            style={{ fontSize: 64, lineHeight: 66, fontFamily: fonts.display, color: p.onAccentSoft, fontVariant: ['tabular-nums'] }}
           >
             {format(remaining)}
           </Text>
           <Button variant="secondary" label={t('workout.skipRest')} onPress={onSkip} />
         </>
       ) : (
-        <Text accessibilityLiveRegion="polite" style={{ fontSize: 17, fontWeight: '600', color: p.onAccentSoft }}>
+        <Text accessibilityLiveRegion="polite" style={{ fontSize: 22, fontFamily: fonts.displaySemi, textTransform: 'uppercase', color: p.onAccentSoft }}>
           {t('workout.restDone')}
         </Text>
       )}

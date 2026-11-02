@@ -8,8 +8,9 @@
  * with licensed media and a recorded human review. See docs/CONTENT_REVIEW.md.
  */
 import type { Equipment, Exercise, LoadBasis, MovementPattern, Muscle } from '../domain/types';
+import { LIBRARY_DRAFTS } from './exercises.library.dev';
 
-interface Draft {
+export interface Draft {
   id: string;
   name: string;
   aliases?: string[];
@@ -27,10 +28,10 @@ interface Draft {
   progressions?: string[];
 }
 
-const STOP =
+export const STOP =
   'Stop the exercise if you feel sharp, sudden or unusual pain, dizziness, chest discomfort or unusual breathlessness. Ordinary muscle effort is expected; pain is not.';
 
-function draft(d: Draft): Exercise {
+export function draft(d: Draft): Exercise {
   return {
     id: d.id,
     provider: null,
@@ -57,7 +58,7 @@ function draft(d: Draft): Exercise {
   };
 }
 
-const drafts: Draft[] = [
+const coreDrafts: Draft[] = [
   // Squat pattern
   {
     id: 'leg_press',
@@ -392,6 +393,40 @@ const drafts: Draft[] = [
   },
 ];
 
-export const DEV_EXERCISES: Exercise[] = drafts.map(draft);
+/** Extra approved-relationship links from the core movements to the wider library (appended, order kept). */
+const EXTRA_LINKS: Record<string, Partial<Pick<Draft, 'alternatives' | 'regressions' | 'progressions'>>> = {
+  leg_press: { alternatives: ['hack_squat', 'smith_machine_squat', 'bodyweight_squat'], progressions: ['hack_squat'] },
+  goblet_squat: { alternatives: ['smith_machine_squat', 'bodyweight_squat'], progressions: ['barbell_back_squat'] },
+  box_squat: { alternatives: ['bodyweight_squat'] },
+  db_romanian_deadlift: { alternatives: ['kettlebell_deadlift', 'db_hip_thrust', 'cable_pull_through'], progressions: ['barbell_romanian_deadlift'] },
+  glute_bridge: { alternatives: ['db_hip_thrust'], progressions: ['db_hip_thrust'] },
+  seated_leg_curl: { alternatives: ['lying_leg_curl'] },
+  machine_chest_press: { alternatives: ['smith_bench_press', 'cable_chest_press', 'push_up'], regressions: ['knee_push_up'], progressions: ['db_bench_press'] },
+  db_bench_press: { alternatives: ['incline_db_press', 'push_up'], progressions: ['barbell_bench_press'] },
+  incline_push_up: { alternatives: ['knee_push_up'], progressions: ['push_up'] },
+  machine_shoulder_press: { alternatives: ['standing_db_shoulder_press'], progressions: ['barbell_overhead_press'] },
+  seated_db_shoulder_press: { alternatives: ['standing_db_shoulder_press'] },
+  seated_row_machine: { alternatives: ['seated_cable_row', 'chest_supported_db_row', 'band_row'], progressions: ['barbell_row'] },
+  one_arm_db_row: { alternatives: ['chest_supported_db_row', 'seated_cable_row'] },
+  lat_pulldown: { alternatives: ['assisted_pull_up', 'straight_arm_pulldown'], progressions: ['negative_pull_up'] },
+  kneeling_cable_pulldown: { alternatives: ['straight_arm_pulldown'] },
+  dead_bug: { alternatives: ['plank', 'reverse_crunch'] },
+  bird_dog: { alternatives: ['plank', 'side_plank'] },
+  pallof_press: { alternatives: ['side_plank'] },
+};
+
+function withLinks(d: Draft): Draft {
+  const extra = EXTRA_LINKS[d.id];
+  if (!extra) return d;
+  const merge = (a: string[] | undefined, b: string[] | undefined) => [...(a ?? []), ...(b ?? []).filter((x) => !(a ?? []).includes(x))];
+  return {
+    ...d,
+    alternatives: merge(d.alternatives, extra.alternatives),
+    regressions: merge(d.regressions, extra.regressions),
+    progressions: merge(d.progressions, extra.progressions),
+  };
+}
+
+export const DEV_EXERCISES: Exercise[] = [...coreDrafts.map(withLinks), ...LIBRARY_DRAFTS].map(draft);
 
 export const DEV_CATALOGUE: Record<string, Exercise> = Object.fromEntries(DEV_EXERCISES.map((e) => [e.id, e]));

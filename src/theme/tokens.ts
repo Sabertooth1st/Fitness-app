@@ -1,71 +1,102 @@
 /**
- * Calm, warm palette with restrained teal accents. Text/background pairs are
- * chosen for at least WCAG AA contrast (4.5:1 for body text).
+ * "Iron & chalk": graphite surfaces, chalk-white text and a safety-yellow
+ * accent taken from gym hardware and hazard tape. Dark is the default look;
+ * light mode keeps the same identity. Text/background pairs meet WCAG AA.
+ *
+ * `accent` is a FILL colour (buttons, bars); `accentInk` is the accent used as
+ * text or a thin line on the page background, which needs more contrast in
+ * light mode than the yellow fill can give.
  */
 export interface Palette {
+  scheme: 'dark' | 'light';
   background: string;
   surface: string;
   surfaceMuted: string;
+  surfaceRaised: string;
   text: string;
   textMuted: string;
   border: string;
   accent: string;
   onAccent: string;
+  accentInk: string;
   accentSoft: string;
   onAccentSoft: string;
   danger: string;
   onDanger: string;
   dangerSoft: string;
+  onDangerSoft: string;
   warningSoft: string;
   onWarningSoft: string;
+  success: string;
   muscleBase: string;
   musclePrimary: string;
   muscleSecondary: string;
+  muscleOutline: string;
 }
 
-export const light: Palette = {
-  background: '#FBF8F3',
-  surface: '#FFFFFF',
-  surfaceMuted: '#F2EEE7',
-  text: '#1E2A28',
-  textMuted: '#55615E',
-  border: '#E3DCD0',
-  accent: '#1D7064',
-  onAccent: '#FFFFFF',
-  accentSoft: '#DCEFEA',
-  onAccentSoft: '#134D45',
-  danger: '#A8261D',
-  onDanger: '#FFFFFF',
-  dangerSoft: '#FBE7E4',
-  warningSoft: '#FDF1D8',
-  onWarningSoft: '#5C4300',
-  muscleBase: '#E6E0D6',
-  musclePrimary: '#1D7064',
-  muscleSecondary: '#8CC7BB',
+export const dark: Palette = {
+  scheme: 'dark',
+  background: '#0E0F11',
+  surface: '#17191C',
+  surfaceMuted: '#1F2226',
+  surfaceRaised: '#262A2F',
+  text: '#F2F0EB',
+  textMuted: '#A2A5AB',
+  border: '#2C3036',
+  accent: '#FFD23F',
+  onAccent: '#14130C',
+  accentInk: '#FFD23F',
+  accentSoft: '#2E2810',
+  onAccentSoft: '#FFE58A',
+  danger: '#FF5A4E',
+  onDanger: '#1A0503',
+  dangerSoft: '#341614',
+  onDangerSoft: '#FFC2BC',
+  warningSoft: '#2B2617',
+  onWarningSoft: '#EFD99A',
+  success: '#7BD88F',
+  muscleBase: '#2A2E33',
+  musclePrimary: '#FFD23F',
+  muscleSecondary: '#8A7428',
+  muscleOutline: '#F2F0EB',
 };
 
-export const dark: Palette = {
-  background: '#111614',
-  surface: '#1A211F',
-  surfaceMuted: '#222B28',
-  text: '#EEF2F0',
-  textMuted: '#A9B5B1',
-  border: '#2F3A37',
-  accent: '#63C7B3',
-  onAccent: '#0B201C',
-  accentSoft: '#1E3833',
-  onAccentSoft: '#BFE9DF',
-  danger: '#FF8A80',
-  onDanger: '#2B0705',
-  dangerSoft: '#3A1D1A',
-  warningSoft: '#3A3020',
-  onWarningSoft: '#F5DFAE',
-  muscleBase: '#34403C',
-  musclePrimary: '#63C7B3',
-  muscleSecondary: '#2E6F63',
+export const light: Palette = {
+  scheme: 'light',
+  background: '#EFEDE8',
+  surface: '#FFFFFF',
+  surfaceMuted: '#E5E2DC',
+  surfaceRaised: '#F7F6F3',
+  text: '#121315',
+  textMuted: '#55585E',
+  border: '#D6D2CA',
+  accent: '#FFC914',
+  onAccent: '#14130C',
+  accentInk: '#6E5300',
+  accentSoft: '#FFF1BF',
+  onAccentSoft: '#4A3800',
+  danger: '#B42318',
+  onDanger: '#FFFFFF',
+  dangerSoft: '#FDE5E2',
+  onDangerSoft: '#7A1710',
+  warningSoft: '#FBF0D2',
+  onWarningSoft: '#5C4300',
+  success: '#1E7A3A',
+  muscleBase: '#DCD8D0',
+  musclePrimary: '#E0A800',
+  muscleSecondary: '#F1D98A',
+  muscleOutline: '#121315',
 };
+
+export const fonts = {
+  display: 'BarlowCondensed_800ExtraBold',
+  displaySemi: 'BarlowCondensed_600SemiBold',
+  body: 'Barlow_500Medium',
+  bodyRegular: 'Barlow_400Regular',
+  bodyBold: 'Barlow_700Bold',
+} as const;
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 } as const;
-export const radius = { sm: 8, md: 14, lg: 20, pill: 999 } as const;
+export const radius = { sm: 8, md: 14, lg: 18, pill: 999 } as const;
 /** Minimum touch target in density-independent pixels. */
 export const MIN_TOUCH = 48;

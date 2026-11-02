@@ -1,7 +1,7 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
-import { Body, Button, Card, Heading, Screen, Title } from '../components/ui';
+import { Body, Button, Card, Heading, Screen, Small, Title } from '../components/ui';
 import type { ProximityResult } from '../domain/checkIn';
 import { CHECK_IN_RULES } from '../domain/rules';
 import { useApp } from '../features/app/AppState';
@@ -18,9 +18,15 @@ export default function CheckIn() {
   const t = useT();
   const { snapshot, palette } = useApp();
   const [phase, setPhase] = useState<Phase>({ kind: 'choose' });
+  // Hard-day choices pass straight through to the readiness step.
+  const carry = useLocalSearchParams<{ hardDay?: string; minutes?: string; commitment?: string }>();
   const gym = snapshot?.gym?.label ?? t('onboarding.gymLabelPlaceholder');
 
-  const proceed = (method: 'manual' | 'location_assisted') => router.replace({ pathname: '/readiness', params: { method } });
+  const proceed = (method: 'manual' | 'location_assisted') =>
+    router.replace({
+      pathname: '/readiness',
+      params: { method, ...(carry.hardDay ? { hardDay: carry.hardDay, minutes: carry.minutes ?? '20', commitment: carry.commitment ?? 'short_session' } : {}) },
+    });
 
   async function runLocation() {
     setPhase({ kind: 'checking' });
@@ -28,7 +34,7 @@ export default function CheckIn() {
     setPhase({ kind: 'result', result });
   }
 
-  const manual = <Button testID="manual-check-in" label={t('checkIn.manual')} onPress={() => proceed('manual')} />;
+  const manual = <Button testID="manual-check-in" size="large" label={t('checkIn.manual')} onPress={() => proceed('manual')} />;
 
   return (
     <Screen edges={['bottom']}>
@@ -38,9 +44,9 @@ export default function CheckIn() {
       {phase.kind === 'choose' && (
         <>
           {manual}
-          <Body muted>{t('checkIn.manualNote')}</Body>
+          <Small>{t('checkIn.manualNote')}</Small>
           <Button testID="location-check-in" variant="secondary" label={t('checkIn.location')} onPress={() => setPhase({ kind: 'explain' })} />
-          <Body muted>{t('checkIn.locationNote')}</Body>
+          <Small>{t('checkIn.locationNote')}</Small>
         </>
       )}
 
@@ -76,7 +82,7 @@ export default function CheckIn() {
         </Card>
       )}
 
-      <Body muted>{t('checkIn.honesty')}</Body>
+      <Small>{t('checkIn.honesty')}</Small>
     </Screen>
   );
 }

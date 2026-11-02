@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { View } from 'react-native';
 import { Body, Button, Card, Choice, Heading, Row, Screen, Title } from '../components/ui';
 import { decideSession, type CoachDecision } from '../domain/coach';
 import { COACH_RULES, XP_RULES } from '../domain/rules';
@@ -16,11 +17,17 @@ const FEELINGS: ReadinessFeeling[] = ['comfortable', 'unsure', 'returning'];
 
 export default function Readiness() {
   const t = useT();
-  const { method } = useLocalSearchParams<{ method?: string }>();
+  const { method, hardDay, minutes: presetMinutes, commitment } = useLocalSearchParams<{
+    method?: string;
+    hardDay?: string;
+    minutes?: string;
+    commitment?: string;
+  }>();
+  const isHardDay = hardDay === '1';
   const checkInMethod = method === 'location_assisted' ? 'location_assisted' : 'manual';
   const { snapshot, store, refresh, today, timezone } = useApp();
   const programme = snapshot?.programme;
-  const [minutes, setMinutes] = useState(programme?.sessionMinutes ?? 45);
+  const [minutes, setMinutes] = useState(isHardDay && presetMinutes ? Number(presetMinutes) : (programme?.sessionMinutes ?? 45));
   const [feeling, setFeeling] = useState<ReadinessFeeling>(
     snapshot?.profile?.experience === 'returning' && snapshot.history.length === 0 ? 'returning' : 'comfortable',
   );
@@ -54,10 +61,10 @@ export default function Readiness() {
         setBlocked(decision);
         return;
       }
-      const sessionId = await store.startSession({ decision, catalogue, localDate: date, timezone, checkInMethod, rulesVersion: COACH_RULES.version });
+      const sessionId = await store.startSession({ decision, catalogue, localDate: date, timezone, checkInMethod, rulesVersion: COACH_RULES.version, hardDay: isHardDay });
       await store.award({ type: 'check_in', localDate: date, sessionId, isTrainingDay: true }, { daysPerWeek: programme.daysPerWeek, rules: XP_RULES });
       await refresh();
-      router.replace('/workout');
+      router.replace(isHardDay && commitment === 'first_exercise' ? { pathname: '/workout', params: { deal: '1' } } : '/workout');
     } catch (e) {
       if (e instanceof ActiveSessionExistsError) {
         await refresh();
@@ -73,17 +80,26 @@ export default function Readiness() {
   return (
     <Screen edges={['bottom']}>
       <Title>{t('readiness.title')}</Title>
+      {isHardDay && (
+        <Card tone="accent">
+          <Body bold>{t('readiness.hardDayBanner')}</Body>
+        </Card>
+      )}
 
-      <Heading>{t('readiness.safetyQuestion')}</Heading>
+      <Body bold>{t('readiness.safetyQuestion')}</Body>
       <Row gap={spacing.sm}>
-        <Choice testID="safety-no" label={t('readiness.safetyNo')} selected={safety === 'ok'} onPress={() => setSafety('ok')} />
-        <Choice testID="safety-yes" label={t('readiness.safetyYes')} selected={safety === 'concern'} onPress={() => setSafety('concern')} />
+        <View style={{ flex: 1 }}>
+          <Choice testID="safety-no" label={t('readiness.safetyNo')} selected={safety === 'ok'} onPress={() => setSafety('ok')} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Choice testID="safety-yes" label={t('readiness.safetyYes')} selected={safety === 'concern'} onPress={() => setSafety('concern')} />
+        </View>
       </Row>
 
       <Heading>{t('readiness.timeQuestion')}</Heading>
       <Row gap={spacing.sm} wrap>
         {TIMES.map((m) => (
-          <Choice key={m} label={t('common.minutes', { n: m })} selected={minutes === m} onPress={() => setMinutes(m)} />
+          <Choice compact key={m} label={t('common.minutes', { n: m })} selected={minutes === m} onPress={() => setMinutes(m)} />
         ))}
       </Row>
 
@@ -98,11 +114,11 @@ export default function Readiness() {
           {blocked.reasons.map((r, i) => (
             <Body key={i} muted>• {reasonText(t.locale, r)}</Body>
           ))}
-          <Button variant="secondary" label={t('noSession.rest')} onPress={() => router.replace('/(tabs)')} />
+          <Button variant="secondary" label={t('noSession.rest')} onPress={() => router.dismissTo('/(tabs)')} />
         </Card>
       )}
 
-      <Button testID="start-session" label={t('readiness.start')} disabled={safety === null || busy} onPress={start} />
+      <Button testID="start-session" size="large" label={t('readiness.start')} disabled={safety === null || busy} onPress={start} />
     </Screen>
   );
 }

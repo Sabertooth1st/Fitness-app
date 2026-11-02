@@ -1,6 +1,6 @@
 # Test report
 
-Recorded 2026-10-29 in a Linux cloud container (Node 22.22, PostgreSQL 16, Chromium via Playwright). Every result below was observed in that run. **No physical device, simulator or real gym test has been run yet.**
+Recorded 2026-11-02 (updated) in a Linux cloud container (Node 22.22, PostgreSQL 16, Chromium via Playwright). Every result below was observed in that run. **No physical device, simulator or real gym test has been run yet.**
 
 ## Automated results
 
@@ -8,10 +8,11 @@ Recorded 2026-10-29 in a Linux cloud container (Node 22.22, PostgreSQL 16, Chrom
 |---|---|---|
 | TypeScript strict | `npm run typecheck` | Pass |
 | ESLint (Expo config, React compiler rules) | `npm run lint` | Pass, 0 problems |
-| Unit, repository, sync, content and component tests | `npm test` | **59/59 pass** (6 suites) |
+| Unit, repository, sync, content, catalogue-integrity and component tests | `npm test` | **162/162 pass** (8 suites; includes a per-exercise check on all 92 movements) |
 | Supabase migration + RLS/sync tests (PostgreSQL 16 with a Supabase `auth` shim) | `npm run test:db` | **24/24 assertions pass** |
 | Android JS bundle (Hermes) | `npx expo export -p android` | Builds (3.3 MB HBC) |
-| Web smoke flow (Chromium, 390×844, fixed Monday clock) | `npm run e2e:web` | Pass, no console errors |
+| Web end-to-end suite (Chromium, 390×844, fixed clocks, 4 fresh profiles) | `npm run e2e:web` | **20/20 checks pass**, no console errors: full session (+40 XP), resume after reload, hard-day flow and badge, busy-machine swap, pain stop, rest day, light theme, all 92 exercise pages |
+| iOS JS bundle (Hermes) | `npx expo export -p ios` | Builds (3.4 MB HBC) |
 | Production content audit | `npm run content:audit` | **Fails, as intended**: 67 problems (unreviewed template and movements, no licence, no media) |
 | Release check | `npm run release-check` | **Fails, as intended**: config, rules, content, legal placeholders, store info, open blockers |
 
@@ -21,12 +22,13 @@ Bugs found and fixed while testing:
 - A PL/pgSQL variable had an ambiguous name.
 - The weight stepper overflowed on narrow screens.
 - Confirmation dialogs did nothing on web.
+- Returning to Today after a workout stacked a duplicate copy of the tab screens (now `router.dismissTo`).
 
 ## Acceptance tests (from the brief)
 
 | # | Test | Status | Evidence |
 |---|---|---|---|
-| 1 | Guest sees the next plan and all lessons before check-in | Partially automated (web) | `e2e/web-smoke.js` opens the plan preview before check-in. Each preview card links to its setup lesson, but the smoke test opens a lesson from Learn *after* the workout. On rest days the preview shows the next training date (code path; not yet in an automated test). |
+| 1 | Guest sees the next plan and all lessons before check-in | Partially automated (web) | `e2e/web-e2e.js` opens the plan preview before check-in. Each preview card links to its setup lesson, but the smoke test opens a lesson from Learn *after* the workout. On rest days the preview shows the next training date (code path; not yet in an automated test). |
 | 2 | Location refusal, timeout, stale or poor accuracy leave a manual route | Logic automated; native not run | `tests/domain/rules.test.ts` (stale, poor and missing accuracy, unavailable, far). The UI always renders the manual button. `e2e/maestro/location-denied.yaml` is **not yet run**. |
 | 3 | Check-in never triggers a purchase or hides safety info | By construction | No billing SDK installed. Check-in leads only to readiness. Safety copy is reachable from readiness and the workout. Needs a review when billing is enabled. |
 | 4 | Rest day assigns no heavy session | Automated | `coach.test.ts` "rest day does not assign training" |
@@ -34,8 +36,8 @@ Bugs found and fixed while testing:
 | 6 | No valid substitute → explanation, not a guess | Automated | `coach.test.ts`, `rules.test.ts` (`no_valid_substitute`) |
 | 7 | Missed session does not double volume | Automated | `coach.test.ts` |
 | 8 | Long break → re-entry policy | Automated | `coach.test.ts`, `rules.test.ts` (re-entry load) |
-| 9 | Pain/concern outranks completion/XP | Automated (logic) | `coach.test.ts` (concern → `safety_stop`), `rules.test.ts` (no mission XP for `safety_stop`), `store.test.ts` (safety stop recorded distinctly). The pain button's UI path is in `e2e/maestro/guest-flow.yaml`, which is **not yet run**. |
-| 10 | Termination after a logged set preserves it | Automated (SQLite file reopen + web reload) | `store.test.ts`, `e2e/web-smoke.js`. **Native process kill not yet run.** |
+| 9 | Pain/concern outranks completion/XP | Automated (logic) | `coach.test.ts` (concern → `safety_stop`), `rules.test.ts` (no mission XP for `safety_stop`), `store.test.ts` (safety stop recorded distinctly). On web, `e2e/web-e2e.js` taps "Pain: stop" mid-workout and confirms the safety screen and calm safety-stop day. Native run via `e2e/maestro/guest-flow.yaml` **not yet done**. |
+| 10 | Termination after a logged set preserves it | Automated (SQLite file reopen + web reload) | `store.test.ts`, `e2e/web-e2e.js`. **Native process kill not yet run.** |
 | 11 | Airplane mode with a prepared workout | Partially by construction | The workout loop makes no network calls. There is no licensed media to cache yet. **Not device-tested.** |
 | 12 | Reconnect/retry does not duplicate | Automated | `sync.test.ts` (lost response after commit), `rls.test.sql` (replays), `store.test.ts` (concurrent XP) |
 | 13 | Two devices cannot silently overwrite a completed workout | Automated (server + client) | `rls.test.sql`, `sync.test.ts`. The UI shows a warning when the session belongs to another device. |

@@ -16,41 +16,99 @@ export type WeightUnit = 'kg' | 'lb';
 
 export type Equipment =
   | 'leg_press_machine'
+  | 'hack_squat_machine'
   | 'chest_press_machine'
   | 'shoulder_press_machine'
+  | 'pec_deck_machine'
   | 'lat_pulldown_machine'
   | 'seated_row_machine'
   | 'leg_curl_machine'
   | 'leg_extension_machine'
+  | 'calf_raise_machine'
+  | 'smith_machine'
   | 'cable_station'
+  | 'barbell'
+  | 'squat_rack'
   | 'dumbbells'
+  | 'kettlebell'
   | 'bench'
-  | 'mat';
+  | 'pull_up_bar'
+  | 'dip_station'
+  | 'resistance_band'
+  | 'mat'
+  | 'treadmill'
+  | 'exercise_bike'
+  | 'rowing_machine';
 
 export const ALL_EQUIPMENT: readonly Equipment[] = [
   'leg_press_machine',
+  'hack_squat_machine',
   'chest_press_machine',
   'shoulder_press_machine',
+  'pec_deck_machine',
   'lat_pulldown_machine',
   'seated_row_machine',
   'leg_curl_machine',
   'leg_extension_machine',
+  'calf_raise_machine',
+  'smith_machine',
   'cable_station',
+  'barbell',
+  'squat_rack',
   'dumbbells',
+  'kettlebell',
   'bench',
+  'pull_up_bar',
+  'dip_station',
+  'resistance_band',
   'mat',
+  'treadmill',
+  'exercise_bike',
+  'rowing_machine',
+];
+
+/** Groups for onboarding and the gym screen, so a long list stays scannable. */
+export const EQUIPMENT_GROUPS: { key: 'machines' | 'free_weights' | 'bodyweight' | 'cardio'; items: Equipment[] }[] = [
+  {
+    key: 'machines',
+    items: [
+      'leg_press_machine',
+      'hack_squat_machine',
+      'chest_press_machine',
+      'shoulder_press_machine',
+      'pec_deck_machine',
+      'lat_pulldown_machine',
+      'seated_row_machine',
+      'leg_curl_machine',
+      'leg_extension_machine',
+      'calf_raise_machine',
+      'smith_machine',
+      'cable_station',
+    ],
+  },
+  { key: 'free_weights', items: ['barbell', 'squat_rack', 'dumbbells', 'kettlebell', 'bench'] },
+  { key: 'bodyweight', items: ['pull_up_bar', 'dip_station', 'resistance_band', 'mat'] },
+  { key: 'cardio', items: ['treadmill', 'exercise_bike', 'rowing_machine'] },
 ];
 
 export type MovementPattern =
   | 'squat'
+  | 'lunge'
   | 'hinge'
   | 'horizontal_push'
   | 'vertical_push'
+  | 'chest_fly'
   | 'horizontal_pull'
   | 'vertical_pull'
+  | 'shoulder_raise'
+  | 'elbow_flexion'
+  | 'elbow_extension'
   | 'knee_flexion'
   | 'knee_extension'
-  | 'trunk';
+  | 'calf_raise'
+  | 'trunk'
+  | 'carry'
+  | 'conditioning';
 
 export type Muscle =
   | 'chest'
@@ -69,7 +127,8 @@ export type Muscle =
   | 'quadriceps'
   | 'hamstrings'
   | 'adductors'
-  | 'calves';
+  | 'calves'
+  | 'traps';
 
 /** User-reported familiarity with a movement. Not an assessment of technique. */
 export type Familiarity = 'new' | 'reminder' | 'comfortable';
@@ -190,6 +249,8 @@ export interface CompletedSession {
   outcome: SessionOutcome;
   /** Exercise chosen for each template slot, used to keep movements stable. */
   slotExercises: Record<string, string>;
+  /** The user said it was a hard day and came anyway. */
+  hardDay?: boolean;
 }
 
 export interface Constraints {

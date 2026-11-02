@@ -1,41 +1,80 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { Body, Button, Card, Gap, Heading, Pill, Screen, Title } from '../../components/ui';
+import { Pressable, Text, View } from 'react-native';
+import { FlameIcon } from '../../components/icons';
+import { Body, Button, Card, Display, Eyebrow, Pill, Row, Screen, Segments, Small, Stat } from '../../components/ui';
+import { summariseWeek } from '../../domain/adherence';
 import { decideSession, type CoachDecision } from '../../domain/coach';
+import { dailyIndex, hardDayWins, weeksInARow } from '../../domain/motivation';
 import { COACH_RULES } from '../../domain/rules';
 import { nextTrainingDate } from '../../domain/schedule';
-import { summariseWeek } from '../../domain/adherence';
-import { coachInputFrom, useApp } from '../../features/app/AppState';
+import { catalogue, coachInputFrom, useApp } from '../../features/app/AppState';
 import { useT } from '../../i18n';
 import { exerciseName, formatDate, reasonText } from '../../i18n/format';
+import { fonts, radius, spacing } from '../../theme/tokens';
 
 export default function Today() {
   const t = useT();
-  const { snapshot, refresh, today, store } = useApp();
+  const { snapshot, refresh, today, store, palette: p } = useApp();
   useFocusEffect(
     useCallback(() => {
       void refresh();
     }, [refresh]),
   );
-  if (!snapshot?.programme) return <Screen><Body>{t('common.loading')}</Body></Screen>;
+  if (!snapshot?.programme) {
+    return (
+      <Screen>
+        <Body>{t('common.loading')}</Body>
+      </Screen>
+    );
+  }
 
   const date = today();
-  const input = coachInputFrom(snapshot, date)!;
-  const decision: CoachDecision = decideSession(input);
-  const week = summariseWeek(snapshot.programme, snapshot.history, date);
+  const programme = snapshot.programme;
+  const decision: CoachDecision = decideSession(coachInputFrom(snapshot, date)!);
+  const week = summariseWeek(programme, snapshot.history, date);
+  const lines = t.list('motivation.lines');
+  const line = lines[dailyIndex(date, lines.length)];
   const fmt = (d: string | null) => (d ? formatDate(d, t.locale) : null);
+
+  const headline =
+    snapshot.active
+      ? t('today.resumeWorkout')
+      : decision.kind === 'train'
+        ? decision.isReturn
+          ? t('today.returnTitle')
+          : t('today.trainingTitle')
+        : decision.kind === 'not_today' && decision.day.kind === 'completed_today'
+          ? t('today.completedTitle')
+          : decision.kind === 'not_today' && decision.day.kind === 'paused'
+            ? t('today.pausedTitle')
+            : decision.kind === 'no_valid_session'
+              ? t('today.noSessionTitle')
+              : t('today.restTitle');
 
   return (
     <Screen>
-      <Body muted>{fmt(date)}</Body>
-      <Title>{t('today.greeting')}</Title>
-      <Pill label={t('progress.thisWeek', { n: week.attended, target: week.target })} tone="accent" />
+      <Row gap={spacing.sm}>
+        <View style={{ flex: 1 }}>
+          <Eyebrow>{fmt(date)}</Eyebrow>
+        </View>
+      </Row>
+      <Display tone={decision.kind === 'train' || snapshot.active ? 'accent' : 'text'}>{headline}</Display>
+
+      <View style={{ borderLeftWidth: 4, borderLeftColor: p.accent, paddingLeft: spacing.md, paddingVertical: 2 }}>
+        <Text style={{ fontFamily: fonts.displaySemi, fontSize: 21, lineHeight: 25, color: p.text }}>{line}</Text>
+      </View>
+
+      <Segments done={Math.min(week.attended, week.target)} target={week.target} label={t('progress.thisWeek', { n: week.attended, target: week.target })} />
+      <Row gap={spacing.sm}>
+        <Stat testID="stat-weeks" value={weeksInARow(programme, snapshot.history, date)} label={t('motivation.weeksInARow')} />
+        <Stat testID="stat-hard-days" value={hardDayWins(snapshot.history)} label={t('motivation.hardDayCount')} />
+      </Row>
 
       {snapshot.active && (
         <Card tone="accent">
-          <Heading>{t('today.resumeWorkout')}</Heading>
           <Body>{t('today.resumeBody')}</Body>
-          <Button testID="resume-workout" label={t('today.resumeWorkout')} onPress={() => router.push('/workout')} />
+          <Button testID="resume-workout" size="large" label={t('today.resumeWorkout')} onPress={() => router.push('/workout')} />
         </Card>
       )}
 
@@ -48,36 +87,70 @@ export default function Today() {
 
       {decision.kind === 'train' && !snapshot.active && (
         <>
-          {decision.isReturn && (
-            <Card tone="accent">
-              <Heading>{t('today.returnTitle')}</Heading>
-            </Card>
-          )}
           <Card>
-            <Heading>{t('today.trainingTitle')}</Heading>
-            <Pill label={`${t.dyn(`variant.${decision.variant}`)} · ${t('common.minutes', { n: decision.estimatedMinutes })}`} />
-            <Body>{t('today.firstExercise', { name: exerciseName(decision.exercises[0].exerciseId) })}</Body>
-            {decision.reasons.map((r, i) => (
-              <Body key={i} muted>
-                • {reasonText(t.locale, r)}
-              </Body>
-            ))}
-            <Body muted>{t('common.offlineReady')}</Body>
+            <Row gap={spacing.sm} wrap>
+              <Pill tone="solid" label={t.dyn(`variant.${decision.variant}`)} />
+              <Pill label={t('common.minutes', { n: decision.estimatedMinutes })} />
+              <Pill label={t('today.exercises', { n: decision.exercises.length })} />
+            </Row>
+            <View style={{ gap: 6 }}>
+              {decision.exercises.map((ex, i) => (
+                <Pressable
+                  key={ex.slotId}
+                  accessibilityRole="button"
+                  onPress={() => router.push(`/exercise/${ex.exerciseId}`)}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 4 }}
+                >
+                  <Text style={{ fontFamily: fonts.display, fontSize: 18, width: 22, color: i === 0 ? p.accentInk : p.textMuted }}>{i + 1}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Body bold={i === 0}>{exerciseName(ex.exerciseId)}</Body>
+                  </View>
+                  <Small>
+                    {ex.prescription.sets}×{ex.prescription.repsMin}–{ex.prescription.repsMax}
+                  </Small>
+                </Pressable>
+              ))}
+            </View>
+            {decision.reasons
+              .filter((r) => r.code !== 'standard_session')
+              .map((r, i) => (
+                <Small key={i}>• {reasonText(t.locale, r)}</Small>
+              ))}
           </Card>
-          <Button testID="check-in" label={t('today.checkIn')} onPress={() => router.push('/check-in')} />
+          <Button testID="check-in" size="large" label={t('today.checkIn')} onPress={() => router.push('/check-in')} />
+          <Pressable
+            testID="hard-day"
+            accessibilityRole="button"
+            accessibilityLabel={t('motivation.hardDayCta')}
+            onPress={() => router.push('/hard-day')}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: spacing.sm,
+              minHeight: 54,
+              borderRadius: radius.md,
+              borderWidth: 1,
+              borderStyle: 'dashed',
+              borderColor: p.accent,
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <FlameIcon color={p.accentInk} size={20} />
+            <Text style={{ fontFamily: fonts.displaySemi, fontSize: 18, letterSpacing: 0.5, color: p.accentInk, textTransform: 'uppercase' }}>
+              {t('motivation.hardDayCta')}
+            </Text>
+          </Pressable>
           <Button testID="preview" variant="secondary" label={t('today.preview')} onPress={() => router.push('/preview')} />
-          <Body muted>{t('today.checkInNote')}</Body>
+          <Small>{t('common.offlineReady')}</Small>
         </>
       )}
 
       {decision.kind === 'no_valid_session' && (
         <Card tone="warning">
-          <Heading>{t('today.noSessionTitle')}</Heading>
           <Body>{t('noSession.body')}</Body>
           {decision.reasons.map((r, i) => (
-            <Body key={i} muted>
-              • {reasonText(t.locale, r)}
-            </Body>
+            <Small key={i}>• {reasonText(t.locale, r)}</Small>
           ))}
           <Button variant="secondary" label={t('noSession.gym')} onPress={() => router.push('/gym')} />
           <Button variant="secondary" label={t('noSession.learn')} onPress={() => router.push('/(tabs)/learn')} />
@@ -86,13 +159,12 @@ export default function Today() {
 
       {decision.kind === 'not_today' && decision.day.kind === 'paused' && (
         <Card>
-          <Heading>{t('today.pausedTitle')}</Heading>
           <Body>{t('today.pausedBody')}</Body>
-          {decision.day.until && <Body muted>{t('today.pausedUntil', { date: fmt(decision.day.until)! })}</Body>}
+          {decision.day.until && <Small>{t('today.pausedUntil', { date: fmt(decision.day.until)! })}</Small>}
           <Button
             label={t('today.resume')}
             onPress={async () => {
-              await store.setProgramme({ ...snapshot.programme!, pause: null });
+              await store.setProgramme({ ...programme, pause: null });
               await refresh();
             }}
           />
@@ -101,13 +173,12 @@ export default function Today() {
 
       {decision.kind === 'not_today' && decision.day.kind === 'completed_today' && (
         <Card tone="accent">
-          <Heading>{t('today.completedTitle')}</Heading>
           {decision.day.session.outcome === 'safety_stop' ? (
             <Body>{t('today.safetyStoppedBody')}</Body>
           ) : (
             <Body>
               {(() => {
-                const n = evaluateNext(snapshot, date);
+                const n = nextTrainingDate(programme, snapshot.history, date, COACH_RULES);
                 return n ? t('today.completedBody', { date: fmt(n)! }) : t('today.noNextVisit');
               })()}
             </Body>
@@ -118,7 +189,6 @@ export default function Today() {
       {decision.kind === 'not_today' && decision.day.kind === 'rest' && (
         <>
           <Card>
-            <Heading>{t('today.restTitle')}</Heading>
             <Body>
               {decision.day.reason === 'recovery'
                 ? t('today.recoveryBody')
@@ -126,31 +196,29 @@ export default function Today() {
                   ? t('today.weeklyDoneBody')
                   : t('today.restBody')}
             </Body>
-            {decision.day.missedPlanned > 0 && <Body muted>• {reasonText(t.locale, { code: 'missed_not_doubled', missed: decision.day.missedPlanned })}</Body>}
-            <Body muted>{decision.day.nextTrainingDate ? t('today.nextVisit', { date: fmt(decision.day.nextTrainingDate)! }) : t('today.noNextVisit')}</Body>
+            {decision.day.missedPlanned > 0 && <Small>• {reasonText(t.locale, { code: 'missed_not_doubled', missed: decision.day.missedPlanned })}</Small>}
+            <Eyebrow tone="accent">
+              {decision.day.nextTrainingDate ? t('today.nextVisit', { date: fmt(decision.day.nextTrainingDate)! }) : t('today.noNextVisit')}
+            </Eyebrow>
           </Card>
           {decision.day.canMoveSessionToday && (
-            <Card>
+            <>
               <Button
                 testID="move-today"
-                variant="secondary"
                 label={t('today.moveToday')}
                 onPress={async () => {
                   await store.rescheduleTo(date);
                   await refresh();
                 }}
               />
-              <Body muted>{t('today.moveTodayNote')}</Body>
-            </Card>
+              <Small>{t('today.moveTodayNote')}</Small>
+            </>
           )}
+          <Button variant="secondary" label={t('today.preview')} onPress={() => router.push('/preview')} />
           <Button variant="ghost" label={t('today.restLearn')} onPress={() => router.push('/(tabs)/learn')} />
         </>
       )}
-      <Gap />
+      {decision.kind === 'train' && catalogue[decision.exercises[0].exerciseId]?.reviewStatus !== 'approved' && <Small>{t('common.devContent')}</Small>}
     </Screen>
   );
-}
-
-function evaluateNext(snapshot: NonNullable<ReturnType<typeof useApp>['snapshot']>, date: string): string | null {
-  return nextTrainingDate(snapshot.programme!, snapshot.history, date, COACH_RULES);
 }

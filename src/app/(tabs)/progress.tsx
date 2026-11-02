@@ -1,15 +1,17 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Body, Card, Heading, Pill, Row, Screen, Title } from '../../components/ui';
+import { Body, Card, Eyebrow, Heading, Pill, Row, Screen, Segments, Small, Stat, Title } from '../../components/ui';
 import { completedWeeks, summariseWeek } from '../../domain/adherence';
+import { hardDayWins, weeksInARow } from '../../domain/motivation';
+import { countsAsAttendance } from '../../domain/schedule';
 import { XP_RULES } from '../../domain/rules';
 import { levelFor, totalXp } from '../../domain/xp';
 import type { WorkoutSession } from '../../data/local/models';
 import { useApp } from '../../features/app/AppState';
 import { useT } from '../../i18n';
 import { formatDate } from '../../i18n/format';
-import { radius, spacing } from '../../theme/tokens';
+import { spacing } from '../../theme/tokens';
 
 export default function Progress() {
   const t = useT();
@@ -34,33 +36,36 @@ export default function Progress() {
   return (
     <Screen>
       <Title>{t('progress.title')}</Title>
-      <Card tone="accent">
-        <Heading>{t('progress.thisWeek', { n: week.attended, target: week.target })}</Heading>
-        {week.pausedDays > 0 && <Body muted>{t('progress.pausedDays', { n: week.pausedDays })}</Body>}
-        <Body>{t('progress.completedWeeks', { n: completedWeeks(snapshot.programme, snapshot.history) })}</Body>
-      </Card>
+      <Segments done={Math.min(week.attended, week.target)} target={week.target} label={t('progress.thisWeek', { n: week.attended, target: week.target })} />
+      {week.pausedDays > 0 && <Small>{t('progress.pausedDays', { n: week.pausedDays })}</Small>}
+      <Row gap={spacing.sm}>
+        <Stat value={snapshot.history.filter(countsAsAttendance).length} label={t('motivation.sessionsDone')} />
+        <Stat value={weeksInARow(snapshot.programme, snapshot.history, today())} label={t('motivation.weeksInARow')} />
+        <Stat value={hardDayWins(snapshot.history)} label={t('motivation.hardDayCount')} />
+      </Row>
+      <Small>{t('progress.completedWeeks', { n: completedWeeks(snapshot.programme, snapshot.history) })}</Small>
       <Card>
-        <Body muted>{t('progress.level')}</Body>
+        <Eyebrow tone="accent">{t('progress.level')}</Eyebrow>
         <Heading>{t.dyn(`level.${level.key}`)}</Heading>
         <Body>{t('progress.xpTotal', { n: xp })}</Body>
         <View
           accessibilityRole="progressbar"
           accessibilityValue={{ min: 0, max: 100, now: Math.round(progressToNext * 100) }}
-          style={{ height: 10, borderRadius: radius.pill, backgroundColor: palette.surfaceMuted, overflow: 'hidden' }}
+          style={{ height: 12, borderRadius: 3, backgroundColor: palette.surfaceMuted, overflow: 'hidden' }}
         >
           <View style={{ width: `${Math.round(progressToNext * 100)}%`, height: '100%', backgroundColor: palette.accent }} />
         </View>
-        <Body muted>
+        <Small>
           {level.nextAt
             ? t('progress.nextLevel', { n: level.nextAt - xp, level: t.dyn(`level.${XP_RULES.levels[level.index + 1].key}`) })
             : t('progress.maxLevel')}
-        </Body>
-        <Body muted>{t('progress.levelNote')}</Body>
+        </Small>
+        <Small>{t('progress.levelNote')}</Small>
       </Card>
       <Card>
         <Heading>{t('progress.confidence')}</Heading>
         <Body>{t('progress.confidenceCount', { n: comfortable })}</Body>
-        <Body muted>{t('familiarity.note')}</Body>
+        <Small>{t('familiarity.note')}</Small>
       </Card>
       {snapshot.milestones.length > 0 && (
         <Card>
@@ -71,10 +76,10 @@ export default function Progress() {
         </Card>
       )}
       <Heading>{t('progress.history')}</Heading>
-      {sessions.length === 0 && <Body muted>{t('progress.historyEmpty')}</Body>}
+      {sessions.length === 0 && <Small>{t('progress.historyEmpty')}</Small>}
       {sessions.map((s) => (
         <Card key={s.id}>
-          <Body muted>{formatDate(s.localDate, t.locale)}</Body>
+          <Small>{formatDate(s.localDate, t.locale)}</Small>
           <Row gap={spacing.sm} wrap>
             <Pill label={t.dyn(`outcome.${s.outcome ?? 'partial'}`)} tone={s.outcome === 'full' ? 'accent' : 'muted'} />
             <Pill label={t.dyn(`variant.${s.variant}`)} />

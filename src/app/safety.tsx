@@ -20,7 +20,7 @@ export default function Safety() {
       <Body>{t('safety.followUp')}</Body>
       <Body muted>{t('safety.noPenalty')}</Body>
       <Pill label={t('safety.reviewNote')} tone="warning" />
-      <Button testID="safety-back" variant="secondary" label={t('safety.back')} onPress={() => router.replace('/(tabs)')} />
+      <Button testID="safety-back" variant="secondary" label={t('safety.back')} onPress={() => router.dismissTo('/(tabs)')} />
     </Screen>
   );
 }

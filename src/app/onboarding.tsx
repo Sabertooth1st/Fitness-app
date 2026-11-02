@@ -1,13 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
-import { Body, Button, Choice, Heading, Row, Screen } from '../components/ui';
+import { Body, Button, Choice, Eyebrow, Row, Screen, Title } from '../components/ui';
 import { FULL_BODY_TEMPLATE_DEV } from '../content/templates.dev';
 import { validateWeekdays } from '../domain/schedule';
-import { ALL_EQUIPMENT, type Equipment, type Experience, type Goal, type Weekday, type WeightUnit } from '../domain/types';
+import { ALL_EQUIPMENT, EQUIPMENT_GROUPS, type Equipment, type Experience, type Goal, type Weekday, type WeightUnit } from '../domain/types';
 import { useApp } from '../features/app/AppState';
 import { useT } from '../i18n';
-import { radius, spacing } from '../theme/tokens';
+import { fonts, radius, spacing } from '../theme/tokens';
 
 const GOALS: Goal[] = ['general_strength', 'confidence', 'everyday_health'];
 const EXPERIENCES: Experience[] = ['new', 'some', 'returning'];
@@ -43,7 +43,7 @@ export default function Onboarding() {
       experience,
       units,
       locale: existing?.locale ?? 'en',
-      theme: existing?.theme ?? 'system',
+      theme: existing?.theme ?? 'dark',
       reducedMotion: existing?.reducedMotion ?? 'system',
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     });
@@ -67,10 +67,17 @@ export default function Onboarding() {
 
   return (
     <Screen edges={['bottom']}>
-      <Body muted>{t('onboarding.stepOf', { n: step, total: TOTAL_STEPS })}</Body>
+      <View style={{ gap: spacing.sm }}>
+        <Eyebrow tone="accent">{t('onboarding.stepOf', { n: step, total: TOTAL_STEPS })}</Eyebrow>
+        <View style={{ flexDirection: 'row', gap: 4 }}>
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+            <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i < step ? palette.accent : palette.surfaceMuted }} />
+          ))}
+        </View>
+      </View>
       {step === 1 && (
         <>
-          <Heading>{t('onboarding.goalTitle')}</Heading>
+          <Title>{t('onboarding.goalTitle')}</Title>
           {GOALS.map((g) => (
             <Choice key={g} label={t.dyn(`onboarding.goal_${g}`)} selected={goal === g} onPress={() => setGoal(g)} />
           ))}
@@ -78,7 +85,7 @@ export default function Onboarding() {
       )}
       {step === 2 && (
         <>
-          <Heading>{t('onboarding.experienceTitle')}</Heading>
+          <Title>{t('onboarding.experienceTitle')}</Title>
           {EXPERIENCES.map((e) => (
             <Choice key={e} label={t.dyn(`onboarding.experience_${e}`)} selected={experience === e} onPress={() => setExperience(e)} />
           ))}
@@ -86,7 +93,7 @@ export default function Onboarding() {
       )}
       {step === 3 && (
         <>
-          <Heading>{t('onboarding.daysTitle')}</Heading>
+          <Title>{t('onboarding.daysTitle')}</Title>
           <Body muted>{t('onboarding.daysHint')}</Body>
           {WEEKDAYS.map((d) => (
             <Choice key={d} multi testID={`day-${d}`} label={t.dyn(`weekdayLong.${d}`)} selected={days.includes(d)} onPress={() => setDays(toggle(days, d))} />
@@ -96,7 +103,7 @@ export default function Onboarding() {
       )}
       {step === 4 && (
         <>
-          <Heading>{t('onboarding.durationTitle')}</Heading>
+          <Title>{t('onboarding.durationTitle')}</Title>
           {DURATIONS.map((m) => (
             <Choice key={m} label={t('common.minutes', { n: m })} selected={minutes === m} onPress={() => setMinutes(m)} />
           ))}
@@ -104,10 +111,10 @@ export default function Onboarding() {
       )}
       {step === 5 && (
         <>
-          <Heading>{t('onboarding.equipmentTitle')}</Heading>
+          <Title>{t('onboarding.equipmentTitle')}</Title>
           <Body muted>{t('onboarding.equipmentHint')}</Body>
           <View style={{ gap: spacing.xs }}>
-            <Body>{t('onboarding.gymLabel')}</Body>
+            <Eyebrow>{t('onboarding.gymLabel')}</Eyebrow>
             <TextInput
               value={gymLabel}
               onChangeText={setGymLabel}
@@ -123,27 +130,33 @@ export default function Onboarding() {
                 color: palette.text,
                 backgroundColor: palette.surface,
                 fontSize: 16,
+                fontFamily: fonts.body,
               }}
             />
           </View>
-          {ALL_EQUIPMENT.map((e) => (
-            <Choice key={e} multi label={t.dyn(`equipment.${e}`)} selected={equipment.includes(e)} onPress={() => setEquipment(toggle(equipment, e))} />
+          {EQUIPMENT_GROUPS.map((g) => (
+            <View key={g.key} style={{ gap: spacing.sm }}>
+              <Eyebrow>{t.dyn(`onboarding.group_${g.key}`)}</Eyebrow>
+              {g.items.map((e) => (
+                <Choice compact key={e} multi label={t.dyn(`equipment.${e}`)} selected={equipment.includes(e)} onPress={() => setEquipment(toggle(equipment, e))} />
+              ))}
+            </View>
           ))}
         </>
       )}
       {step === 6 && (
         <>
-          <Heading>{t('onboarding.unitsTitle')}</Heading>
+          <Title>{t('onboarding.unitsTitle')}</Title>
           <Choice label="kg" selected={units === 'kg'} onPress={() => setUnits('kg')} />
           <Choice label="lb" selected={units === 'lb'} onPress={() => setUnits('lb')} />
         </>
       )}
       {step === 7 && (
         <>
-          <Heading>{t('onboarding.exclusionsTitle')}</Heading>
+          <Title>{t('onboarding.exclusionsTitle')}</Title>
           <Body muted>{t('onboarding.exclusionsHint')}</Body>
           {ALL_EQUIPMENT.map((e) => (
-            <Choice key={e} multi label={t.dyn(`equipment.${e}`)} selected={excluded.includes(e)} onPress={() => setExcluded(toggle(excluded, e))} />
+            <Choice compact key={e} multi label={t.dyn(`equipment.${e}`)} selected={excluded.includes(e)} onPress={() => setExcluded(toggle(excluded, e))} />
           ))}
         </>
       )}
